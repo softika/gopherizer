@@ -12,7 +12,8 @@ func initApi(cfg *config.Config) *api.Router {
 		cfg.Http.Auth.Secret,
 	)
 
-	s := initServices()
+	r := initRepositories(cfg.Database)
+	s := initServices(r)
 	h := initHandlers(s)
 
 	initRoutes(router, h)

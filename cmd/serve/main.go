@@ -35,7 +35,7 @@ func Run() {
 		log.Info("stopped serving new connections.")
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server with a timeout.
+	// Wait for interrupt signal to gracefully shut down the server with a timeout.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 	<-ctx.Done()

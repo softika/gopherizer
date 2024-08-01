@@ -3,11 +3,11 @@ services:
     container_name: local-postgres
     image: postgres:latest
     environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: tldw
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
-      - "${DB_PORT}:5432"
+      - "5432:5432"
     volumes:
       - psql_volume:/var/lib/postgresql/data
 

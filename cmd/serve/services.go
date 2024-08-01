@@ -6,8 +6,8 @@ type services struct {
 	healthService health.Service
 }
 
-func initServices() services {
+func initServices(r repositories) services {
 	return services{
-		healthService: health.NewService(),
+		healthService: health.NewService(r.healthRepo),
 	}
 }

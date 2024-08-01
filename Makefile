@@ -1,13 +1,13 @@
 # Simple Makefile for a Go project
 
-# Build the application
-all: build
+# project name
+PROJECT_NAME = TLDW
 
 build:
-	@echo "=== Building TL;DW..."
+	@echo "=== Building $(PROJECT_NAME)..."
 	
 	
-	@go build -o tldw main.go
+	@go build -o $(PROJECT_NAME) main.go
 
 # Run the application
 run:
@@ -18,6 +18,7 @@ run:
 
 # Create DB container
 docker-run:
+	@echo "=== Running docker containers..."
 	@if docker compose up 2>/dev/null; then \
 		: ; \
 	else \
@@ -27,6 +28,7 @@ docker-run:
 
 # Shutdown DB container
 docker-down:
+	@echo "=== Stopping docker containers..."
 	@if docker compose down 2>/dev/null; then \
 		: ; \
 	else \
@@ -37,20 +39,16 @@ docker-down:
 
 # Test the application
 test:
-	@echo "Testing..."
-	@go test ./tests -v
+	@echo "=== Testing..."
+	@go test -v ./...
 
-
-# Integrations Tests for the application
-itest:
-	@echo "Running integration tests..."
-	@go test ./internal/database -v
-
+race: # check race conditions
+	@go test -v ./... --race
 
 # Clean the binary
 clean:
-	@echo "Cleaning..."
-	@rm -f main
+	@echo "=== Cleaning..."
+	@rm -f $(PROJECT_NAME)
 
 # Live Reload
 watch:
@@ -69,4 +67,4 @@ watch:
 	    fi; \
 	fi
 
-.PHONY: all build run test clean
+.PHONY: build run test clean

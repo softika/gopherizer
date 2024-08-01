@@ -4,15 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
+
+	// pgx
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
+
 	"tldw/config"
 	"tldw/logger"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/joho/godotenv/autoload"
 )
 
 // Service represents a service that interacts with a database.
@@ -27,32 +29,47 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
+	db   *sql.DB
+	pool *pgxpool.Pool
 }
 
 var (
 	dbService *service
+
+	once sync.Once
 )
 
 func New(cfg config.DatabaseConfig) Service {
-	// Reuse Connection
-	if dbService != nil {
-		return dbService
-	}
+	once.Do(func() {
+		log := logger.Logger()
+		log.Info("creating a new database connection pool...")
 
-	db, err := sql.Open("pgx", dsnFromConfig(cfg))
-	if err != nil {
-		log.Fatal(err)
-	}
-	dbService = &service{
-		db: db,
-	}
+		pool, err := pgxpool.New(context.Background(), dsnFromConfig(cfg))
+		if err != nil {
+			log.Error("failed to create db connection pool", "error", err)
+			return
+		}
+
+		db := stdlib.OpenDBFromPool(pool)
+
+		if err = db.Ping(); err != nil {
+			log.Error("failed to ping db", "error", err)
+			return
+		}
+
+		dbService = &service{
+			db:   db,
+			pool: pool,
+		}
+	})
+
 	return dbService
 }
 
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health() map[string]string {
+	log := logger.Logger()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -63,7 +80,7 @@ func (s *service) Health() map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Fatalf(fmt.Sprintf("db down: %v", err)) // Log the error and terminate the program
+		log.Error("db is down", "error", err)
 		return stats
 	}
 
@@ -110,17 +127,14 @@ func (s *service) Close() error {
 }
 
 func dsnFromConfig(config config.DatabaseConfig) string {
-	var params []string
+	dsn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%s/%s?sslmode=require",
+		config.User, config.Password, config.Host, config.Port, config.DBName,
+	)
 
-	params = append(params, fmt.Sprintf("user=%s", config.User))
-	params = append(params, fmt.Sprintf("host=%s", config.Host))
-	params = append(params, fmt.Sprintf("port=%s", config.Port))
-	params = append(params, fmt.Sprintf("dbname=%s", config.DBName))
-	if config.Password != "" {
-		params = append(params, fmt.Sprintf("password=%s", config.Password))
+	if config.SSLModeDisabled {
+		dsn = strings.Replace(dsn, "sslmode=require", "sslmode=disable", 1)
 	}
-	if config.SSLMode {
-		params = append(params, "sslmode=disable")
-	}
-	return strings.Join(params, " ")
+
+	return dsn
 }

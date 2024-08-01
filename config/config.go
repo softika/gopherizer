@@ -63,10 +63,10 @@ type HTTPConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `mapstructure:"host" validate:"required"`
-	Port     string `mapstructure:"port" validate:"required"`
-	DBName   string `mapstructure:"dbname" validate:"required"`
-	Password string `mapstructure:"password" validate:"required"`
-	User     string `mapstructure:"user" validate:"required"`
-	SSLMode  bool   `mapstructure:"sslmode"`
+	Host            string `mapstructure:"host" validate:"required"`
+	Port            string `mapstructure:"port" validate:"required"`
+	DBName          string `mapstructure:"dbname" validate:"required"`
+	Password        string `mapstructure:"password" validate:"required"`
+	User            string `mapstructure:"user" validate:"required"`
+	SSLModeDisabled bool   `mapstructure:"sslmode_disabled"`
 }
