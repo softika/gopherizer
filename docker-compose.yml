@@ -4,8 +4,8 @@ services:
     image: postgres:latest
     environment:
       POSTGRES_DB: tldw
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: dbadmin
+      POSTGRES_PASSWORD: dbadmin
     ports:
       - "5432:5432"
     volumes:

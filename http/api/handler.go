@@ -78,6 +78,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	return h.responseMapper.Map(w, out)
 }
 
+// Route registers the handler with the router.
 func (h Handler[In, Out]) Route(router *Router, method, path string) {
 	router.Method(method, path, h)
 }

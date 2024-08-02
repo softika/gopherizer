@@ -69,11 +69,12 @@ func RunPostgres() (*PostgresContainer, error) {
 			}
 
 			cfg = config.DatabaseConfig{
-				Host:     host,
-				Port:     port.Port(),
-				DBName:   dbName,
-				Password: dbPassword,
-				User:     dbUser,
+				Host:            host,
+				Port:            port.Port(),
+				DBName:          dbName,
+				Password:        dbPassword,
+				User:            dbUser,
+				SSLModeDisabled: true,
 			}
 			break
 		}

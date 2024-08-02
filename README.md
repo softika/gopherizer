@@ -29,7 +29,7 @@ with business logic directly.
 `internal` contains all reusable business logic that can be consumed by `http` or `eventing` layers.
 It is divided into:
 - `services` - represents business logic use cases.
-- `model` - performs busines logic and deals directly with `storage` layer and/or `integrations` clients.
+- `model` - performs business logic and deals directly with `storage` layer and/or `integrations` clients.
 
 ### Environment Config
 
@@ -57,27 +57,21 @@ inside `Config` as a struct. This allows for individually passing structs of a s
 example:
 
 ```go
+package main 
+
 type Config struct {
-    App AppConfig
-    Database DatabaseConfig
+    App      AppConfig      
+    Http     HTTPConfig     
+    Database DatabaseConfig 
 }
 
-func New(cfg config.DatabaseConfig) Service {
-    db, err := sql.Open("pgx", fmt.Sprintf(
-        "user=%s password=%s dbname=%s host=%s port=%s sslmode=disable",
-        cfg.User,
-        cfg.Password,
-        cfg.DBName,
-        cfg.Host,
-        cfg.Port,
-    ))
-    if err != nil {
-        log.Fatal(err)
-    }
-    dbService = &service{
-        db: db,
-    }
-    return dbService
+func initApi(cfg config.Config) *api.Router {
+    router := api.NewRouter(
+    cfg.App.Environment,
+    cfg.Http.Auth.Secret,
+  )
+
+  return router
 }
 ```
 ##### AppConfig

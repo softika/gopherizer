@@ -47,14 +47,14 @@ func New(cfg config.DatabaseConfig) Service {
 		pool, err := pgxpool.New(context.Background(), dsnFromConfig(cfg))
 		if err != nil {
 			log.Error("failed to create db connection pool", "error", err)
-			return
+			panic(err)
 		}
 
 		db := stdlib.OpenDBFromPool(pool)
 
 		if err = db.Ping(); err != nil {
 			log.Error("failed to ping db", "error", err)
-			return
+			panic(err)
 		}
 
 		dbService = &service{
