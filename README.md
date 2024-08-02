@@ -57,21 +57,18 @@ inside `Config` as a struct. This allows for individually passing structs of a s
 example:
 
 ```go
-package main 
+package example 
 
-type Config struct {
-    App      AppConfig      
-    Http     HTTPConfig     
-    Database DatabaseConfig 
-}
+import (
+    "tldw/config"
+    "tldw/http/api"
+)
 
-func initApi(cfg config.Config) *api.Router {
-    router := api.NewRouter(
-    cfg.App.Environment,
-    cfg.Http.Auth.Secret,
-  )
-
-  return router
+func InitRouter(cfg config.Config) *api.Router {
+    return api.NewRouter(
+        cfg.App.Environment,
+        cfg.Http.Auth.Secret,
+    )
 }
 ```
 ##### AppConfig
