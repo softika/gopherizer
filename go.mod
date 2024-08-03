@@ -6,10 +6,12 @@ require (
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	github.com/testcontainers/testcontainers-go v0.32.0
+	go.uber.org/mock v0.4.0
 )
 
 require (
