@@ -2,12 +2,12 @@ package user
 
 import (
 	"context"
+	"testing"
+	"tldw/internal/model"
+
 	"github.com/oklog/ulid/v2"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
-	"reflect"
-	"testing"
-	"tldw/internal/model"
 
 	"tldw/internal/services/user/mock"
 )
@@ -47,10 +47,20 @@ func TestService_Create(t *testing.T) {
 			},
 			wantErr: assert.NoError,
 		},
+		{
+			name: "error",
+			req:  req(),
+			mockFn: func(r *mock.MockRepository) {
+				r.EXPECT().Create(ctx, gomock.Any()).Return(nil, assert.AnError)
+			},
+			wantErr: assert.Error,
+		},
 	}
 	for _, tc := range tests {
 		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// given
 			repo := mock.NewMockRepository(ctrl)
 			s := NewService(repo)
@@ -71,103 +81,186 @@ func TestService_Create(t *testing.T) {
 }
 
 func TestService_DeleteById(t *testing.T) {
-	type fields struct {
-		repo Repository
-	}
-	type args struct {
-		ctx context.Context
-		id  ulid.ULID
-	}
+	t.Parallel()
+
+	ctx := context.Background()
+
+	ctrl := gomock.NewController(t)
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		mockFn  func(r *mock.MockRepository)
+		req     ulid.ULID
 		want    bool
-		wantErr bool
+		wantErr assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			req:  ulid.Make(),
+			mockFn: func(r *mock.MockRepository) {
+				r.EXPECT().DeleteById(ctx, gomock.Any()).Return(nil)
+			},
+			want:    true,
+			wantErr: assert.NoError,
+		},
+		{
+			name: "error",
+			req:  ulid.Make(),
+			mockFn: func(r *mock.MockRepository) {
+				r.EXPECT().DeleteById(ctx, gomock.Any()).Return(assert.AnError)
+			},
+			want:    false,
+			wantErr: assert.Error,
+		},
 	}
-	for _, tt := range tests {
+	for _, tc := range tests {
+		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
-			s := Service{
-				repo: tt.fields.repo,
-			}
-			got, err := s.DeleteById(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("DeleteById() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("DeleteById() got = %v, want %v", got, tt.want)
-			}
+			t.Parallel()
+
+			// given
+			repo := mock.NewMockRepository(ctrl)
+			s := NewService(repo)
+			tt.mockFn(repo)
+
+			// when
+			got, err := s.DeleteById(ctx, tt.req)
+
+			// then
+			tt.wantErr(t, err)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
 
 func TestService_GetByEmail(t *testing.T) {
-	type fields struct {
-		repo Repository
-	}
-	type args struct {
-		ctx   context.Context
-		email string
-	}
+	t.Parallel()
+
+	ctx := context.Background()
+
+	ctrl := gomock.NewController(t)
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		req     string
+		mockFn  func(r *mock.MockRepository)
 		want    *Response
-		wantErr bool
+		wantErr assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			req:  "fake@email.com",
+			mockFn: func(r *mock.MockRepository) {
+				u := model.NewUser().
+					WithFirstName("John").
+					WithLastName("Doe").
+					WithEmail("fake@email.com")
+				r.EXPECT().GetByEmail(ctx, gomock.Any()).Return(u, nil)
+			},
+			want: &Response{
+				FirstName: "John",
+				LastName:  "Doe",
+				Email:     "fake@email.com",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "error",
+			req:  "fake@email.com",
+			mockFn: func(r *mock.MockRepository) {
+				r.EXPECT().GetByEmail(ctx, gomock.Any()).Return(nil, assert.AnError)
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
 	}
-	for _, tt := range tests {
+	for _, tc := range tests {
+		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
-			s := Service{
-				repo: tt.fields.repo,
-			}
-			got, err := s.GetByEmail(tt.args.ctx, tt.args.email)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetByEmail() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			// given
+			repo := mock.NewMockRepository(ctrl)
+			s := NewService(repo)
+			tt.mockFn(repo)
+
+			// when
+			got, err := s.GetByEmail(ctx, tt.req)
+
+			// then
+			if err != nil && tt.wantErr(t, err) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetByEmail() got = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want.Email, got.Email)
+			assert.Equal(t, tt.want.FirstName, got.FirstName)
+			assert.Equal(t, tt.want.LastName, got.LastName)
 		})
 	}
 }
 
 func TestService_GetById(t *testing.T) {
-	type fields struct {
-		repo Repository
-	}
-	type args struct {
-		ctx context.Context
-		id  ulid.ULID
-	}
+	t.Parallel()
+
+	ctx := context.Background()
+
+	ctrl := gomock.NewController(t)
+
 	tests := []struct {
 		name    string
-		fields  fields
-		args    args
+		req     ulid.ULID
+		mockFn  func(r *mock.MockRepository)
 		want    *Response
-		wantErr bool
+		wantErr assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name: "success",
+			req:  ulid.Make(),
+			mockFn: func(r *mock.MockRepository) {
+				u := model.NewUser().
+					WithFirstName("John").
+					WithLastName("Doe").
+					WithEmail("fake@email.com")
+				r.EXPECT().GetById(ctx, gomock.Any()).Return(u, nil)
+			},
+			want: &Response{
+				FirstName: "John",
+				LastName:  "Doe",
+				Email:     "fake@email.com",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "error",
+			req:  ulid.Make(),
+			mockFn: func(r *mock.MockRepository) {
+				r.EXPECT().GetById(ctx, gomock.Any()).Return(nil, assert.AnError)
+			},
+			want:    nil,
+			wantErr: assert.Error,
+		},
 	}
-	for _, tt := range tests {
+	for _, tc := range tests {
+		tt := tc
 		t.Run(tt.name, func(t *testing.T) {
-			s := Service{
-				repo: tt.fields.repo,
-			}
-			got, err := s.GetById(tt.args.ctx, tt.args.id)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetById() error = %v, wantErr %v", err, tt.wantErr)
+			t.Parallel()
+
+			// given
+			repo := mock.NewMockRepository(ctrl)
+			s := NewService(repo)
+			tt.mockFn(repo)
+
+			// when
+			got, err := s.GetById(ctx, tt.req)
+
+			// then
+			if err != nil && tt.wantErr(t, err) {
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GetById() got = %v, want %v", got, tt.want)
-			}
+
+			assert.Equal(t, tt.want.Email, got.Email)
+			assert.Equal(t, tt.want.FirstName, got.FirstName)
+			assert.Equal(t, tt.want.LastName, got.LastName)
 		})
 	}
 }
