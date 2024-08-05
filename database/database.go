@@ -3,19 +3,30 @@ package database
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	// pgx
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"tldw/config"
 	"tldw/logger"
 )
+
+//go:embed migrations/*.sql
+var migrations embed.FS
+
+func GetMigrationFS() embed.FS {
+	return migrations
+}
+
+func GetDialect() string {
+	return "postgres"
+}
 
 // Service represents a service that interacts with a database.
 type Service interface {
@@ -26,6 +37,12 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	// DB returns the database connection.
+	DB() *sql.DB
+
+	// Pool returns the pgx connection pool.
+	Pool() *pgxpool.Pool
 }
 
 type service struct {
@@ -41,7 +58,7 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		log := logger.Logger()
+		log := logger.Get()
 		log.Info("creating a new database connection pool...")
 
 		pool, err := pgxpool.New(context.Background(), dsnFromConfig(cfg))
@@ -51,7 +68,6 @@ func New(cfg config.DatabaseConfig) Service {
 		}
 
 		db := stdlib.OpenDBFromPool(pool)
-
 		if err = db.Ping(); err != nil {
 			log.Error("failed to ping db", "error", err)
 			panic(err)
@@ -69,7 +85,7 @@ func New(cfg config.DatabaseConfig) Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health() map[string]string {
-	log := logger.Logger()
+	log := logger.Get()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -122,7 +138,7 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	logger.Logger().Info("closing the database connection...")
+	logger.Get().Info("closing the database connection...")
 	return s.db.Close()
 }
 
@@ -137,4 +153,12 @@ func dsnFromConfig(config config.DatabaseConfig) string {
 	}
 
 	return dsn
+}
+
+func (s *service) DB() *sql.DB {
+	return s.db
+}
+
+func (s *service) Pool() *pgxpool.Pool {
+	return s.pool
 }

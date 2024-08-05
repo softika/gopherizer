@@ -12,8 +12,12 @@ Top Level Directories
 
 - [cmd/](cmd) - contains initialization code for Cobra.
 - [config/](config) - contains environment variables and loading of environment variables.
+- [database/](database) - contains database service, repositories and migration files.
 - [http/](http) - deals with transport layer, input sanitation and consumes `internal/controllers` layer.
 - [internal/](internal) - contains `controllers`, `services`, `integrations` and `storage` layer.
+- [logger/](logger) - contains logger service.
+- [testc/](testc) - contains test-containers utilities.
+- [tests/](tests) - contains e2e tests.
 
 ### http
 `http` folder deals with the transport protocol and typically input sanitation.
@@ -22,7 +26,7 @@ For example, there could be:
 - `http/grpc` for a gRPC server implementation
 - `http/server` for running the server
 
-Ideally they all should only consume `internal/controllers` layer and do not deal
+Ideally they all should only consume `internal/services` layer and do not deal
 with business logic directly.
 
 ### internal
@@ -60,15 +64,42 @@ example:
 package example 
 
 import (
+    "context"
+    "database/sql"
+    "fmt"
+
+    // pgx 
+    "github.com/jackc/pgx/v5/pgxpool"
+    "github.com/jackc/pgx/v5/stdlib"
+	
     "tldw/config"
-    "tldw/http/api"
 )
 
-func InitRouter(cfg config.Config) *api.Router {
-    return api.NewRouter(
-        cfg.App.Environment,
-        cfg.Http.Auth.Secret,
+type Service struct {
+  db   *sql.DB
+  pool *pgxpool.Pool
+}
+
+func New(cfg config.DatabaseConfig) Service {
+    dsn := fmt.Sprintf(
+        "postgresql://%s:%s@%s:%s/%s?sslmode=require",
+        cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, 
     )
+	
+    pool, err := pgxpool.New(context.Background(), dsn)
+    if err != nil {
+        panic(err)
+    }
+
+    db := stdlib.OpenDBFromPool(pool)
+    if err = db.Ping(); err != nil {
+        panic(err)
+    }
+
+    return Service{
+        db:   db,
+        pool: pool,
+    }
 }
 ```
 ##### AppConfig
@@ -83,7 +114,7 @@ SQL database migration and managing migration files.
 
 To create a new migration file.
 ```sh
-goose -dir internal/sqlstore/postgres/migrations create xxx sql
+goose -dir database/migrations create xxx sql
 ```
 
 ### Generating mocks
@@ -128,6 +159,16 @@ make docker-run
 Shutdown DB container
 ```bash
 make docker-down
+```
+
+Migrate DB
+```bash
+make migrate-up
+```
+
+Rollback DB migration
+```bash
+make migrate-down
 ```
 
 live reload the application

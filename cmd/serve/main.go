@@ -14,7 +14,7 @@ import (
 )
 
 func Run() {
-	log := logger.Logger()
+	log := logger.Get()
 	cfg, err := config.New()
 	if err != nil {
 		log.Error("failed to read config", "error", err)

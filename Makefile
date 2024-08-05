@@ -37,6 +37,16 @@ docker-down:
 	fi
 
 
+# migrate DB
+migrate-up:
+	@echo "=== Migrating database..."
+	@go run main.go migrate up
+
+# rollback DB
+migrate-down:
+	@echo "=== Rolling back database..."
+	@go run main.go migrate down
+
 # Test the application
 test:
 	@echo "=== Testing..."

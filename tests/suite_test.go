@@ -30,11 +30,11 @@ func (s *E2ETestSuite) SetupSuite() {
 
 func (s *E2ETestSuite) TearDownSuite() {
 	if err := s.dbService.Close(); err != nil {
-		logger.Logger().Warn("failed to close db connection", "error", err)
+		logger.Get().Warn("failed to close db connection", "error", err)
 	}
 
 	if err := s.dbContainer.Shutdown(); err != nil {
-		logger.Logger().Warn("failed to shutdown postgres container", "error", err)
+		logger.Get().Warn("failed to shutdown postgres container", "error", err)
 	}
 }
 
