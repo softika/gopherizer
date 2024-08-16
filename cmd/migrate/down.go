@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"tldw/config"
 	"tldw/database"
-	"tldw/logger"
+	"tldw/logging"
 )
 
 var MigrateDownCmd = &cobra.Command{
@@ -17,7 +17,7 @@ var MigrateDownCmd = &cobra.Command{
 }
 
 func down() {
-	lgr := logger.Get()
+	lgr := logging.Get()
 
 	cfg, err := config.New()
 	if err != nil {

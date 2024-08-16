@@ -14,7 +14,6 @@ import (
 	reflect "reflect"
 	model "tldw/internal/model"
 
-	v2 "github.com/oklog/ulid/v2"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -57,7 +56,7 @@ func (mr *MockRepositoryMockRecorder) Create(arg0, arg1 any) *gomock.Call {
 }
 
 // DeleteById mocks base method.
-func (m *MockRepository) DeleteById(arg0 context.Context, arg1 v2.ULID) error {
+func (m *MockRepository) DeleteById(arg0 context.Context, arg1 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteById", arg0, arg1)
 	ret0, _ := ret[0].(error)
@@ -86,7 +85,7 @@ func (mr *MockRepositoryMockRecorder) GetByEmail(arg0, arg1 any) *gomock.Call {
 }
 
 // GetById mocks base method.
-func (m *MockRepository) GetById(arg0 context.Context, arg1 v2.ULID) (*model.User, error) {
+func (m *MockRepository) GetById(arg0 context.Context, arg1 string) (*model.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetById", arg0, arg1)
 	ret0, _ := ret[0].(*model.User)

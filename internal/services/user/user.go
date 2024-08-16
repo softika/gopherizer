@@ -5,18 +5,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/oklog/ulid/v2"
-
 	"tldw/internal/model"
 	"tldw/internal/services"
 )
 
 type Repository interface {
-	GetById(context.Context, ulid.ULID) (*model.User, error)
+	GetById(context.Context, string) (*model.User, error)
 	GetByEmail(context.Context, string) (*model.User, error)
 	Create(context.Context, *model.User) (*model.User, error)
 	Update(context.Context, *model.User) (*model.User, error)
-	DeleteById(context.Context, ulid.ULID) error
+	DeleteById(context.Context, string) error
 }
 
 type Service struct {
@@ -27,7 +25,7 @@ func NewService(r Repository) Service {
 	return Service{repo: r}
 }
 
-func (s Service) GetById(ctx context.Context, id ulid.ULID) (*Response, error) {
+func (s Service) GetById(ctx context.Context, id string) (*Response, error) {
 	u, err := s.repo.GetById(ctx, id)
 	if err != nil {
 		return nil, services.NewError(
@@ -72,7 +70,7 @@ func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, erro
 	return res.fromModel(created), nil
 }
 
-func (s Service) DeleteById(ctx context.Context, id ulid.ULID) (bool, error) {
+func (s Service) DeleteById(ctx context.Context, id string) (bool, error) {
 	if err := s.repo.DeleteById(ctx, id); err != nil {
 		return false, services.NewError(
 			fmt.Errorf("failed to delete user by id: %w", err),

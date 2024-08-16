@@ -15,7 +15,7 @@ Top Level Directories
 - [database/](database) - contains database service, repositories and migration files.
 - [http/](http) - deals with transport layer, input sanitation and consumes `internal/controllers` layer.
 - [internal/](internal) - contains `controllers`, `services`, `integrations` and `storage` layer.
-- [logger/](logger) - contains logger service.
+- [logger/](logging) - contains logger service.
 - [testc/](testc) - contains test-containers utilities.
 - [tests/](tests) - contains e2e tests.
 

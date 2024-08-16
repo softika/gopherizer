@@ -1,5 +1,3 @@
-# Simple Makefile for a Go project
-
 # project name
 PROJECT_NAME = TLDW
 
@@ -49,11 +47,8 @@ migrate-down:
 
 # Test the application
 test:
-	@echo "=== Testing..."
-	@go test -v ./...
-
-race: # check race conditions
-	@go test -v ./... --race
+	@echo "=== Running tests with race detector"
+	go test -vet=off -count=1 -race -timeout=30s ./...
 
 # Clean the binary
 clean:
@@ -76,5 +71,8 @@ watch:
 	        exit 1; \
 	    fi; \
 	fi
+
+mock:
+	@go generate -x ./...
 
 .PHONY: build run test clean

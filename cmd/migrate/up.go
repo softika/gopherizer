@@ -3,7 +3,7 @@ package migrate
 import (
 	"github.com/spf13/cobra"
 	"tldw/database"
-	"tldw/logger"
+	"tldw/logging"
 
 	"tldw/config"
 )
@@ -18,7 +18,7 @@ var MigrateUpCmd = &cobra.Command{
 }
 
 func up() {
-	lgr := logger.Get()
+	lgr := logging.Get()
 
 	cfg, err := config.New()
 	if err != nil {

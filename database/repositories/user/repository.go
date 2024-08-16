@@ -4,8 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-
-	"github.com/oklog/ulid/v2"
+	"tldw/database/repositories"
 
 	"tldw/database"
 	"tldw/internal/model"
@@ -25,6 +24,7 @@ var (
 )
 
 type Repository struct {
+	repositories.TransactionManager
 	dbService database.Service
 }
 
@@ -32,7 +32,7 @@ func NewRepository(dbService database.Service) Repository {
 	return Repository{dbService: dbService}
 }
 
-func (r Repository) GetById(ctx context.Context, id ulid.ULID) (*model.User, error) {
+func (r Repository) GetById(ctx context.Context, id string) (*model.User, error) {
 	u := new(model.User)
 	if err := r.dbService.Pool().QueryRow(ctx, getById, id).Scan(u); err != nil {
 		return nil, err
@@ -57,10 +57,11 @@ func (r Repository) Create(ctx context.Context, u *model.User) (*model.User, err
 		u.Email,     // $3
 		u.Password,  // $4
 		u.Enabled,   // $5
-	).Scan(u)
+	).Scan(&u.Id, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
+
 	return u, nil
 }
 
@@ -72,14 +73,14 @@ func (r Repository) Update(ctx context.Context, u *model.User) (*model.User, err
 		u.Password,  // $4
 		u.Enabled,   // $5
 		u.Id,        // $6
-	).Scan(u)
+	).Scan(&u.Id, &u.CreatedAt, &u.UpdatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	return u, nil
 }
 
-func (r Repository) DeleteById(ctx context.Context, id ulid.ULID) error {
+func (r Repository) DeleteById(ctx context.Context, id string) error {
 	_, err := r.dbService.Pool().Exec(ctx, deleteById, id)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)

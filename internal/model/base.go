@@ -2,12 +2,10 @@ package model
 
 import (
 	"time"
-
-	"github.com/oklog/ulid/v2"
 )
 
 type Base struct {
-	Id        ulid.ULID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Id        string    `db:"id,pk"` // uuid
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }

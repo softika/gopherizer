@@ -2,6 +2,7 @@ package user
 
 import (
 	"time"
+
 	"tldw/internal/model"
 )
 
@@ -15,7 +16,7 @@ type Response struct {
 }
 
 func (r *Response) fromModel(u *model.User) *Response {
-	r.Id = u.Id.String()
+	r.Id = u.Id
 	r.FirstName = u.FirstName
 	r.LastName = u.LastName
 	r.Email = u.Email

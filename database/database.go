@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/stdlib"
 
 	"tldw/config"
-	"tldw/logger"
+	"tldw/logging"
 )
 
 //go:embed migrations/*.sql
@@ -58,7 +58,7 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		log := logger.Get()
+		log := logging.Get()
 		log.Info("creating a new database connection pool...")
 
 		pool, err := pgxpool.New(context.Background(), dsnFromConfig(cfg))
@@ -85,7 +85,7 @@ func New(cfg config.DatabaseConfig) Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health() map[string]string {
-	log := logger.Get()
+	log := logging.Get()
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -138,7 +138,7 @@ func (s *service) Health() map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	logger.Get().Info("closing the database connection...")
+	logging.Get().Info("closing the database connection...")
 	return s.db.Close()
 }
 

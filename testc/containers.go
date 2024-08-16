@@ -8,7 +8,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"tldw/config"
-	"tldw/logger"
+	"tldw/logging"
 )
 
 const (
@@ -25,7 +25,7 @@ type PostgresContainer struct {
 }
 
 func RunPostgres() (*PostgresContainer, error) {
-	log := logger.Get()
+	log := logging.Get()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 	req := testcontainers.ContainerRequest{

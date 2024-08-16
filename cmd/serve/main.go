@@ -10,11 +10,11 @@ import (
 
 	"tldw/config"
 	"tldw/http/server"
-	"tldw/logger"
+	"tldw/logging"
 )
 
 func Run() {
-	log := logger.Get()
+	log := logging.Get()
 	cfg, err := config.New()
 	if err != nil {
 		log.Error("failed to read config", "error", err)

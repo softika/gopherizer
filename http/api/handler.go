@@ -3,10 +3,9 @@ package api
 
 import (
 	"context"
-	"errors"
 	"net/http"
 
-	"tldw/logger"
+	"tldw/logging"
 )
 
 // ServiceFunc is a generic service function type called in a handler.
@@ -54,7 +53,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	// Map request
 	in, err := h.requestMapper.Map(r)
 	if err != nil {
-		logger.Get().Error("failed to map request", "error", err)
+		logging.Get().Error("failed to map request", "error", err)
 		return newError(http.StatusBadRequest, err.Error(), err)
 	}
 
@@ -62,7 +61,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	if h.validator != nil {
 		err = h.validator.StructCtx(r.Context(), in)
 		if err != nil {
-			logger.Get().Error("request validation failed", "error", err)
+			logging.Get().Error("request validation failed", "error", err)
 			return newError(http.StatusBadRequest, err.Error(), err)
 		}
 	}
@@ -70,7 +69,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	// Call out to service function
 	out, err := h.serviceFunc(r.Context(), in)
 	if err != nil {
-		logger.Get().Error("service function failed", "error", err)
+		logging.Get().Error("service function failed", "error", err)
 		return newServiceError(err)
 	}
 
@@ -80,19 +79,5 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 
 // Route registers the handler with the router.
 func (h Handler[In, Out]) Route(router *Router, method, path string) {
-	router.Method(method, path, h)
-}
-
-// ServeHTTP implements http.Handler interface and does error handling.
-func (h Handler[In, Out]) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if err := h.Handle(w, r); err != nil {
-		var apiError Error
-		if errors.As(err, &apiError) {
-			http.Error(w, apiError.Error(), apiError.Code)
-			return
-		}
-
-		apiError = newError(http.StatusInternalServerError, "internal server error", err)
-		http.Error(w, apiError.Error(), http.StatusInternalServerError)
-	}
+	router.Method(method, path, router.CreateHttpHandlerFunc(h.Handle))
 }

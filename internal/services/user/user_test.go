@@ -2,10 +2,10 @@ package user
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"testing"
 	"tldw/internal/model"
 
-	"github.com/oklog/ulid/v2"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
@@ -90,13 +90,13 @@ func TestService_DeleteById(t *testing.T) {
 	tests := []struct {
 		name    string
 		mockFn  func(r *mock.MockRepository)
-		req     ulid.ULID
+		req     uuid.UUID
 		want    bool
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "success",
-			req:  ulid.Make(),
+			req:  uuid.New(),
 			mockFn: func(r *mock.MockRepository) {
 				r.EXPECT().DeleteById(ctx, gomock.Any()).Return(nil)
 			},
@@ -105,7 +105,7 @@ func TestService_DeleteById(t *testing.T) {
 		},
 		{
 			name: "error",
-			req:  ulid.Make(),
+			req:  uuid.New(),
 			mockFn: func(r *mock.MockRepository) {
 				r.EXPECT().DeleteById(ctx, gomock.Any()).Return(assert.AnError)
 			},
@@ -208,14 +208,14 @@ func TestService_GetById(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     ulid.ULID
+		req     uuid.UUID
 		mockFn  func(r *mock.MockRepository)
 		want    *Response
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "success",
-			req:  ulid.Make(),
+			req:  uuid.New(),
 			mockFn: func(r *mock.MockRepository) {
 				u := model.NewUser().
 					WithFirstName("John").
@@ -232,7 +232,7 @@ func TestService_GetById(t *testing.T) {
 		},
 		{
 			name: "error",
-			req:  ulid.Make(),
+			req:  uuid.New(),
 			mockFn: func(r *mock.MockRepository) {
 				r.EXPECT().GetById(ctx, gomock.Any()).Return(nil, assert.AnError)
 			},

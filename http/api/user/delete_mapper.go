@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/oklog/ulid/v2"
+	"github.com/google/uuid"
 )
 
 type DeleteByIdRequestMapper struct{}
@@ -14,11 +14,11 @@ func NewDeleteByIdRequestMapper() DeleteByIdRequestMapper {
 	return DeleteByIdRequestMapper{}
 }
 
-func (m DeleteByIdRequestMapper) Map(r *http.Request) (ulid.ULID, error) {
+func (m DeleteByIdRequestMapper) Map(r *http.Request) (uuid.UUID, error) {
 	idParam := r.PathValue("id")
-	id, err := ulid.Parse(idParam)
+	id, err := uuid.Parse(idParam)
 	if err != nil {
-		return ulid.ULID{}, fmt.Errorf("failed to parse id: %w", err)
+		return uuid.Nil, fmt.Errorf("failed to parse id: %w", err)
 	}
 	return id, nil
 }

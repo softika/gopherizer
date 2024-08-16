@@ -1,9 +1,5 @@
 package user
 
-import (
-	"github.com/oklog/ulid/v2"
-)
-
 type CreateRequest struct {
 	FirstName string `validate:"required,max=72"`
 	LastName  string `validate:"required,max=72"`
@@ -12,9 +8,9 @@ type CreateRequest struct {
 }
 
 type UpdateRequest struct {
-	Id        ulid.ULID `validate:"required"`
-	FirstName string    `validate:"max=72"`
-	LastName  string    `validate:"max=72"`
-	Email     string    `validate:"min=3"`
-	Password  string    `validate:"min=8,max=72"`
+	Id        string `validate:"required"`
+	FirstName string `validate:"max=72"`
+	LastName  string `validate:"max=72"`
+	Email     string `validate:"min=3"`
+	Password  string `validate:"min=8,max=72"`
 }

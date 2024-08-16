@@ -1,29 +1,16 @@
 package model
 
-import (
-	"time"
-
-	"github.com/oklog/ulid/v2"
-)
-
 type User struct {
 	Base
-	FirstName string
-	LastName  string
-	Email     string
-	Password  string
-	Enabled   bool
+	FirstName string `db:"first_name"`
+	LastName  string `db:"last_name"`
+	Email     string `db:"email"`
+	Password  string `db:"password"`
+	Enabled   bool   `db:"enabled"`
 }
 
 func NewUser() *User {
-	return &User{
-		Base: Base{
-			Id:        ulid.Make(),
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
-		},
-		Enabled: true,
-	}
+	return &User{}
 }
 
 func (u *User) WithFirstName(firstName string) *User {

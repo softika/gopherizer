@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 
-	"tldw/logger"
+	"tldw/logging"
 )
 
 type Config struct {
@@ -24,7 +24,7 @@ func New() (*Config, error) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		logger.Get().Error("Error reading config file", "error", err.Error())
+		logging.Get().Error("Error reading config file", "error", err.Error())
 		return nil, err
 	}
 

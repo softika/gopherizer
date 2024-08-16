@@ -5,7 +5,7 @@ import (
 	"testing"
 	"tldw/database"
 	"tldw/http/api"
-	"tldw/logger"
+	"tldw/logging"
 	"tldw/testc"
 )
 
@@ -30,11 +30,11 @@ func (s *E2ETestSuite) SetupSuite() {
 
 func (s *E2ETestSuite) TearDownSuite() {
 	if err := s.dbService.Close(); err != nil {
-		logger.Get().Warn("failed to close db connection", "error", err)
+		logging.Get().Warn("failed to close db connection", "error", err)
 	}
 
 	if err := s.dbContainer.Shutdown(); err != nil {
-		logger.Get().Warn("failed to shutdown postgres container", "error", err)
+		logging.Get().Warn("failed to shutdown postgres container", "error", err)
 	}
 }
 
