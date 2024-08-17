@@ -3,13 +3,19 @@ package repositories
 
 import (
 	"context"
+	"tldw/database"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"tldw/database"
 )
 
-type TransactionManager interface {
+type TxSupport interface {
 	Execute(ctx context.Context, fn func(pgx.Tx) error) error
+}
+
+type TxObject interface {
+	Commit(ctx context.Context) error
+	Rollback(ctx context.Context) error
 }
 
 type TxManager struct {
@@ -20,7 +26,7 @@ func NewTxManager(db database.Service) *TxManager {
 	return &TxManager{db.Pool()}
 }
 
-func (tm *TxManager) Execute(ctx context.Context, fn func(pgx.Tx) error) error {
+func (tm *TxManager) Execute(ctx context.Context, fn func(TxObject) error) error {
 	tx, err := tm.Begin(ctx)
 	if err != nil {
 		return err

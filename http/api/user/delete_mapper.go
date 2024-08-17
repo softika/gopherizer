@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/google/uuid"
 )
 
 type DeleteByIdRequestMapper struct{}
@@ -14,12 +12,12 @@ func NewDeleteByIdRequestMapper() DeleteByIdRequestMapper {
 	return DeleteByIdRequestMapper{}
 }
 
-func (m DeleteByIdRequestMapper) Map(r *http.Request) (uuid.UUID, error) {
-	idParam := r.PathValue("id")
-	id, err := uuid.Parse(idParam)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("failed to parse id: %w", err)
+func (m DeleteByIdRequestMapper) Map(r *http.Request) (string, error) {
+	id := r.PathValue("id")
+	if id == "" {
+		return "", fmt.Errorf("path param id is missing")
 	}
+
 	return id, nil
 }
 

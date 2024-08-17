@@ -24,7 +24,7 @@ var (
 )
 
 type Repository struct {
-	repositories.TransactionManager
+	repositories.TxSupport
 	dbService database.Service
 }
 
@@ -34,7 +34,18 @@ func NewRepository(dbService database.Service) Repository {
 
 func (r Repository) GetById(ctx context.Context, id string) (*model.User, error) {
 	u := new(model.User)
-	if err := r.dbService.Pool().QueryRow(ctx, getById, id).Scan(u); err != nil {
+	if err := r.dbService.Pool().
+		QueryRow(ctx, getById, id).
+		Scan(
+			&u.Id,
+			&u.FirstName,
+			&u.LastName,
+			&u.Email,
+			&u.Password,
+			&u.Enabled,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+		); err != nil {
 		return nil, err
 	}
 
@@ -43,7 +54,18 @@ func (r Repository) GetById(ctx context.Context, id string) (*model.User, error)
 
 func (r Repository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
 	u := new(model.User)
-	if err := r.dbService.Pool().QueryRow(ctx, getByEmail, email).Scan(u); err != nil {
+	if err := r.dbService.Pool().
+		QueryRow(ctx, getByEmail, email).
+		Scan(
+			&u.Id,
+			&u.FirstName,
+			&u.LastName,
+			&u.Email,
+			&u.Password,
+			&u.Enabled,
+			&u.CreatedAt,
+			&u.UpdatedAt,
+		); err != nil {
 		return nil, err
 	}
 

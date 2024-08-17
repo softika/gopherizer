@@ -1,10 +1,11 @@
 package tests
 
 import (
-	"github.com/pressly/goose/v3"
-	"github.com/stretchr/testify/suite"
 	"testing"
 	"tldw/database"
+
+	"github.com/pressly/goose/v3"
+	"github.com/stretchr/testify/suite"
 
 	"tldw/logging"
 	"tldw/testc"
@@ -45,7 +46,7 @@ func (s *RepositoriesTestSuite) TearDownSuite() {
 	}
 }
 
-func TestE2ETestSuite(t *testing.T) {
+func TestRepositoriesTestSuite(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping repository tests in short mode")
 		return
