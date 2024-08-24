@@ -85,6 +85,7 @@ func (r Repository) DeleteById(ctx context.Context, id string) error {
 	return err
 }
 
+// nolint:unused
 func (r Repository) lockById(ctx context.Context, tx pgx.Tx, id string) error {
 	var u model.Profile
 

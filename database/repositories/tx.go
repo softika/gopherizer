@@ -39,12 +39,12 @@ func (tm *txManager) Execute(ctx context.Context, fn func(tx Tx) error) error {
 	}
 	defer func() {
 		if p := recover(); p != nil {
-			tx.Rollback(ctx)
+			err = tx.Rollback(ctx)
 			// re-throw panic after rollbacks
 			panic(p)
 		} else if err != nil {
 			// rollback if error happen
-			tx.Rollback(ctx)
+			err = tx.Rollback(ctx)
 		} else {
 			// if Commit returns error update err with commit err
 			err = tx.Commit(ctx)
