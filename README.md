@@ -1,3 +1,6 @@
+![go workflow](https://github.com/softika/tldw/actions/workflows/test.yml/badge.svg)
+![lint workflow](https://github.com/softika/tldw/actions/workflows/lint.yml/badge.svg)
+
 # Project tldw
 
 One Paragraph of project description goes here
