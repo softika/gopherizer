@@ -3,16 +3,14 @@ package health
 import "context"
 
 type Repository interface {
-	Health() map[string]string
+	Health(ctx context.Context) map[string]string
 }
 
 type Request struct {
 	Status string
 }
 
-type Response struct {
-	Status map[string]string `json:"status"`
-}
+type Response map[string]string
 
 // Service is a dummy service to confirm the health of the server.
 type Service struct {
@@ -26,7 +24,8 @@ func NewService(r Repository) Service {
 }
 
 // Check respond with the health status.
-func (s Service) Check(_ context.Context, _ Request) (*Response, error) {
-	res := s.repo.Health()
-	return &Response{Status: res}, nil
+func (s Service) Check(ctx context.Context, _ Request) (*Response, error) {
+	res := s.repo.Health(ctx)
+	response := Response(res)
+	return &response, nil
 }

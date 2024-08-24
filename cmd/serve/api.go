@@ -1,6 +1,7 @@
 package serve
 
 import (
+	"github.com/go-chi/chi/v5"
 	"net/http"
 
 	"tldw/config"
@@ -24,4 +25,12 @@ func initApi(cfg *config.Config) *api.Router {
 
 func initRoutes(router *api.Router, h handlers) {
 	h.healthHandler.Route(router, http.MethodGet, "/health")
+
+	// profile
+	router.Route("/profile", func(r chi.Router) {
+		r.Post("/", router.CreateHttpHandlerFunc(h.createProfileHandler.Handle))
+		r.Put("/", router.CreateHttpHandlerFunc(h.updateProfileHandler.Handle))
+		r.Get("/{id}", router.CreateHttpHandlerFunc(h.getByIdProfileHandler.Handle))
+		r.Delete("/{id}", router.CreateHttpHandlerFunc(h.deleteByIdProfileHandler.Handle))
+	})
 }

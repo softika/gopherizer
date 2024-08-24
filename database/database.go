@@ -5,13 +5,11 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
-
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
 
 	"tldw/config"
 	"tldw/logging"
@@ -32,7 +30,7 @@ func GetDialect() string {
 type Service interface {
 	// Health returns a map of health status information.
 	// The keys and values in the map are service-specific.
-	Health() map[string]string
+	Health(ctx context.Context) map[string]string
 
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
@@ -83,10 +81,8 @@ func New(cfg config.DatabaseConfig) Service {
 
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
-func (s *service) Health() map[string]string {
+func (s *service) Health(ctx context.Context) map[string]string {
 	log := logging.Get()
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
 
 	stats := make(map[string]string)
 

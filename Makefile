@@ -38,11 +38,13 @@ docker-down:
 # migrate DB
 migrate-up:
 	@echo "=== Migrating database..."
+	@[ -f ./config/config ] || { cp ./config/default.config ./config/config; }
 	@go run main.go migrate up
 
 # rollback DB
 migrate-down:
 	@echo "=== Rolling back database..."
+	@[ -f ./config/config ] || { cp ./config/default.config ./config/config; }
 	@go run main.go migrate down
 
 # Test the application

@@ -1,10 +1,11 @@
 package database
 
 import (
+	"context"
 	"log"
 	"testing"
-	"tldw/config"
 
+	"tldw/config"
 	"tldw/testc"
 )
 
@@ -35,7 +36,7 @@ func TestNew(t *testing.T) {
 func TestHealth(t *testing.T) {
 	srv := New(dbCfg)
 
-	stats := srv.Health()
+	stats := srv.Health(context.Background())
 
 	if stats["status"] != "up" {
 		t.Fatalf("expected status to be up, got %s", stats["status"])
