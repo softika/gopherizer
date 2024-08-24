@@ -1,0 +1,1 @@
+SELECT id FROM profiles WHERE id = $1 FOR UPDATE;

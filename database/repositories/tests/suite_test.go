@@ -2,11 +2,11 @@ package tests
 
 import (
 	"testing"
-	"tldw/database"
 
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/suite"
 
+	"tldw/database"
 	"tldw/logging"
 	"tldw/testc"
 )

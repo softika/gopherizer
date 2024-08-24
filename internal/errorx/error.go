@@ -1,4 +1,4 @@
-package services
+package errorx
 
 import "errors"
 

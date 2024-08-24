@@ -1,0 +1,88 @@
+//go:generate mockgen -source=profile.go -destination=./mock/profile.go -package=mock
+package profile
+
+import (
+	"context"
+	"fmt"
+
+	"tldw/internal/errorx"
+	"tldw/internal/model"
+	"tldw/internal/services"
+)
+
+type Repository interface {
+	services.Repository[model.Profile, string]
+}
+
+type Service struct {
+	repo Repository
+}
+
+func NewService(r Repository) Service {
+	return Service{repo: r}
+}
+
+func (s Service) GetById(ctx context.Context, id string) (*Response, error) {
+	u, err := s.repo.GetById(ctx, id)
+	if err != nil {
+		return nil, errorx.NewError(
+			fmt.Errorf("failed to get profile by id: %w", err),
+			errorx.ErrNotFound,
+		)
+	}
+
+	res := new(Response)
+	return res.fromModel(u), nil
+}
+
+func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, error) {
+	u := model.NewProfile().
+		WithFirstName(req.FirstName).
+		WithLastName(req.LastName).
+		WithEmail(req.Email)
+
+	created, err := s.repo.Create(ctx, u)
+	if err != nil {
+		return nil, errorx.NewError(
+			fmt.Errorf("failed to create profile: %w", err),
+			errorx.ErrInternal,
+		)
+	}
+
+	res := new(Response)
+	res.fromModel(created)
+
+	return res, nil
+}
+
+func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, error) {
+	u := model.NewProfile().
+		WithId(req.Id).
+		WithFirstName(req.FirstName).
+		WithLastName(req.LastName).
+		WithEmail(req.Email)
+
+	updated, err := s.repo.Update(ctx, u)
+	if err != nil {
+		return nil, errorx.NewError(
+			fmt.Errorf("failed to update profile: %w", err),
+			errorx.ErrInternal,
+		)
+	}
+
+	res := new(Response)
+	res.fromModel(updated)
+
+	return res, nil
+}
+
+func (s Service) DeleteById(ctx context.Context, id string) (bool, error) {
+	if err := s.repo.DeleteById(ctx, id); err != nil {
+		return false, errorx.NewError(
+			fmt.Errorf("failed to delete profile by id: %w", err),
+			errorx.ErrInternal,
+		)
+	}
+
+	return true, nil
+}

@@ -1,11 +1,11 @@
-package user
+package profile
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
 
-	svcUser "tldw/internal/services/user"
+	svc "tldw/internal/services/profile"
 )
 
 type GetByIdRequestMapper struct{}
@@ -28,7 +28,7 @@ func NewGetByIdResponseMapper() GetByIdResponseMapper {
 	return GetByIdResponseMapper{}
 }
 
-func (g GetByIdResponseMapper) Map(w http.ResponseWriter, out *svcUser.Response) error {
+func (g GetByIdResponseMapper) Map(w http.ResponseWriter, out *svc.Response) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(out)
@@ -54,7 +54,7 @@ func NewGetByEmailResponseMapper() GetByEmailResponseMapper {
 	return GetByEmailResponseMapper{}
 }
 
-func (g GetByEmailResponseMapper) Map(w http.ResponseWriter, out *svcUser.Response) error {
+func (g GetByEmailResponseMapper) Map(w http.ResponseWriter, out *svc.Response) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(out)

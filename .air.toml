@@ -3,9 +3,9 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-  args_bin = []
-  bin = "./main"
-  cmd = "make build"
+  args_bin = ["serve"]
+  bin = "./tmp/main"
+  cmd = "go build -o ./tmp/main ."
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -40,6 +40,11 @@ tmp_dir = "tmp"
 
 [misc]
   clean_on_exit = false
+
+[proxy]
+  app_port = 0
+  enabled = false
+  proxy_port = 0
 
 [screen]
   clear_on_rebuild = false

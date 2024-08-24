@@ -1,6 +1,6 @@
 services:
   database:
-    container_name: local-postgres
+    container_name: tldw-postgres
     image: postgres:latest
     environment:
       POSTGRES_DB: tldw
@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - psql_volume:/var/lib/postgresql/data
+      - tldw_volume:/var/lib/postgresql/data
 
 volumes:
-  psql_volume:
+  tldw_volume:

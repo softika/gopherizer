@@ -1,4 +1,4 @@
-package user
+package profile
 
 import (
 	"time"
@@ -15,7 +15,7 @@ type Response struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
-func (r *Response) fromModel(u *model.User) *Response {
+func (r *Response) fromModel(u *model.Profile) *Response {
 	r.Id = u.Id
 	r.FirstName = u.FirstName
 	r.LastName = u.LastName

@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	userSvc "tldw/internal/services/user"
+	userSvc "tldw/internal/services/profile"
 )
 
-func (s *E2ETestSuite) TestCreateUserHandler() {
+func (s *E2ETestSuite) TestCreateProfileHandler() {
 	testCases := []struct {
 		name     string
 		path     string

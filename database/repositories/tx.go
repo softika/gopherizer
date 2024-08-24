@@ -1,32 +1,38 @@
-//go:generate mockgen -source=tx.go -destination=./mock/tx.go -package=mock
 package repositories
 
 import (
 	"context"
-	"tldw/database"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"tldw/database"
 )
 
-type TxSupport interface {
-	Execute(ctx context.Context, fn func(pgx.Tx) error) error
-}
-
-type TxObject interface {
+// Tx defines a transaction interface.
+type Tx interface {
 	Commit(ctx context.Context) error
 	Rollback(ctx context.Context) error
 }
 
-type TxManager struct {
+// TxManager defines a method to execute a transaction from Begin until Commit or Rollback.
+type TxManager interface {
+	Begin(context.Context) (Tx, error)
+	Execute(context.Context, func(Tx) error) error
+}
+
+func NewTxManager(db database.Service) TxManager {
+	return &txManager{db.Pool()}
+}
+
+type txManager struct {
 	*pgxpool.Pool
 }
 
-func NewTxManager(db database.Service) *TxManager {
-	return &TxManager{db.Pool()}
+func (tm *txManager) Begin(ctx context.Context) (Tx, error) {
+	return tm.Pool.Begin(ctx)
 }
 
-func (tm *TxManager) Execute(ctx context.Context, fn func(TxObject) error) error {
+func (tm *txManager) Execute(ctx context.Context, fn func(tx Tx) error) error {
 	tx, err := tm.Begin(ctx)
 	if err != nil {
 		return err

@@ -17,11 +17,11 @@ run:
 # Create DB container
 docker-run:
 	@echo "=== Running docker containers..."
-	@if docker compose up 2>/dev/null; then \
+	@if docker compose up -d 2>/dev/null; then \
 		: ; \
 	else \
 		echo "Falling back to Docker Compose V1"; \
-		docker-compose up; \
+		docker-compose up -d; \
 	fi
 
 # Shutdown DB container
@@ -75,4 +75,4 @@ watch:
 mock:
 	@go generate -x ./...
 
-.PHONY: build run test clean
+.PHONY: build run test clean mock watch

@@ -11,6 +11,7 @@ import (
 
 type E2ETestSuite struct {
 	suite.Suite
+
 	dbContainer *testc.PostgresContainer
 	dbService   database.Service
 	router      *api.Router

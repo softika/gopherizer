@@ -67,6 +67,6 @@ type DatabaseConfig struct {
 	Port            string `mapstructure:"port" validate:"required"`
 	DBName          string `mapstructure:"dbname" validate:"required"`
 	Password        string `mapstructure:"password" validate:"required"`
-	User            string `mapstructure:"user" validate:"required"`
+	User            string `mapstructure:"profile" validate:"required"`
 	SSLModeDisabled bool   `mapstructure:"sslmode_disabled"`
 }
