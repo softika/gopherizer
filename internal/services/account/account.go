@@ -1,10 +1,13 @@
+//go:generate mockgen -source=account.go -destination=./mock/account.go -package=mock
 package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 	"tldw/config"
+	"tldw/logging"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -31,13 +34,15 @@ func NewService(cfg config.Auth, r Repository) Service {
 func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
 	a, err := s.repo.GetByUsername(ctx, req.Username)
 	if err != nil {
+		logging.Get().Error("failed to get user by username", "username", req.Username, "error", err)
 		return nil, err
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(req.Password), []byte(a.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(a.Password), []byte(req.Password))
 	if err != nil {
+		logging.Get().Error("invalid credentials", "username", req.Username, "error", err)
 		return nil, errorx.NewError(
-			fmt.Errorf("invalid credentials: %w", err),
+			errors.New("invalid credentials"),
 			errorx.ErrUnauthorized,
 		)
 	}
@@ -65,9 +70,17 @@ func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, e
 }
 
 func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error) {
+	hashPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errorx.NewError(
+			fmt.Errorf("failed to hash password: %w", err),
+			errorx.ErrInternal,
+		)
+	}
+
 	a := model.NewAccount().
 		WithUsername(req.Username).
-		WithPassword(req.Password)
+		WithPassword(string(hashPwd))
 
 	created, err := s.repo.Create(ctx, a)
 	if err != nil {
