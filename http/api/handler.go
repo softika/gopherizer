@@ -79,5 +79,5 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 
 // Route registers the handler with the router.
 func (h Handler[In, Out]) Route(router *Router, method, path string) {
-	router.Method(method, path, router.CreateHttpHandlerFunc(h.Handle))
+	router.Method(method, path, router.MakeHttpHandlerFunc(h.Handle))
 }

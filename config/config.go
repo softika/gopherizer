@@ -14,6 +14,7 @@ type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Http     HTTPConfig     `mapstructure:"http"`
 	Database DatabaseConfig `mapstructure:"database" validate:"required"`
+	Auth     Auth           `mapstructure:"auth"`
 }
 
 func New() (*Config, error) {
@@ -46,16 +47,18 @@ type AppConfig struct {
 	Version     string `mapstructure:"version" validate:"required"`
 }
 
+type Auth struct {
+	Secret   string        `mapstructure:"secret"`
+	TokenExp time.Duration `mapstructure:"token_exp"`
+}
+
 type HTTPConfig struct {
 	Host         string        `mapstructure:"host"`
 	Port         string        `mapstructure:"port" validate:"required"`
 	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
-	Auth         struct {
-		Secret string `mapstructure:"secret"`
-	} `mapstructure:"auth"`
-	Cors struct {
+	Cors         struct {
 		Origins string `mapstructure:"origins"`
 		Methods string `mapstructure:"methods"`
 		Headers string `mapstructure:"headers"`

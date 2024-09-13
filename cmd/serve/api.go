@@ -1,8 +1,9 @@
 package serve
 
 import (
-	"github.com/go-chi/chi/v5"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 
 	"tldw/config"
 	"tldw/http/api"
@@ -11,7 +12,7 @@ import (
 func initApi(cfg *config.Config) *api.Router {
 	router := api.NewRouter(
 		cfg.App.Environment,
-		cfg.Http.Auth.Secret,
+		cfg.Auth.Secret,
 	)
 
 	r := initRepositories(cfg.Database)
@@ -23,14 +24,14 @@ func initApi(cfg *config.Config) *api.Router {
 	return router
 }
 
-func initRoutes(router *api.Router, h handlers) {
-	h.healthHandler.Route(router, http.MethodGet, "/health")
+func initRoutes(r *api.Router, h handlers) {
+	h.healthHandler.Route(r, http.MethodGet, "/health")
 
 	// profile
-	router.Route("/profile", func(r chi.Router) {
-		r.Post("/", router.CreateHttpHandlerFunc(h.createProfileHandler.Handle))
-		r.Put("/", router.CreateHttpHandlerFunc(h.updateProfileHandler.Handle))
-		r.Get("/{id}", router.CreateHttpHandlerFunc(h.getByIdProfileHandler.Handle))
-		r.Delete("/{id}", router.CreateHttpHandlerFunc(h.deleteByIdProfileHandler.Handle))
+	r.Route("/profile", func(c chi.Router) {
+		c.Post("/", r.MakeHttpHandlerFunc(h.createProfileHandler.Handle))
+		c.Put("/", r.MakeHttpHandlerFunc(h.updateProfileHandler.Handle))
+		c.Get("/{id}", r.MakeHttpHandlerFunc(h.getByIdProfileHandler.Handle))
+		c.Delete("/{id}", r.MakeHttpHandlerFunc(h.deleteByIdProfileHandler.Handle))
 	})
 }

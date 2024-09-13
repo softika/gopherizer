@@ -9,6 +9,7 @@ const (
 	ErrInvalidInput
 	ErrForbidden
 	ErrNotFound
+	ErrUnauthorized
 )
 
 type Error struct {
