@@ -71,7 +71,7 @@ func (r Repository) Update(ctx context.Context, p *model.Profile) (*model.Profil
 		p.FirstName, // $1
 		p.LastName,  // $2
 		p.Id,        // $3
-	).Scan(&p.Id, &p.CreatedAt, &p.UpdatedAt); err != nil {
+	).Scan(&p.Id, &p.AccountId, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 	return p, nil
