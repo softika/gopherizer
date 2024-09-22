@@ -6,19 +6,19 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"tldw/config"
-	"tldw/logging"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
+	"tldw/config"
 	"tldw/internal/errorx"
 	"tldw/internal/model"
+	"tldw/logging"
 )
 
 type Repository interface {
 	Create(ctx context.Context, account *model.Account) (*model.Account, error)
-	GetByUsername(ctx context.Context, username string) (*model.Account, error)
+	GetByEmail(ctx context.Context, email string) (*model.Identity, error)
 	ChangePassword(ctx context.Context, id string, oldPassword string, newPassword string) error
 }
 
@@ -32,15 +32,15 @@ func NewService(cfg config.Auth, r Repository) Service {
 }
 
 func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
-	a, err := s.repo.GetByUsername(ctx, req.Username)
+	a, err := s.repo.GetByEmail(ctx, req.Email)
 	if err != nil {
-		logging.Get().Error("failed to get user by username", "username", req.Username, "error", err)
+		logging.Get().Error("failed to get user by username", "email", req.Email, "error", err)
 		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(a.Password), []byte(req.Password))
 	if err != nil {
-		logging.Get().Error("invalid credentials", "username", req.Username, "error", err)
+		logging.Get().Error("invalid credentials", "email", req.Email, "error", err)
 		return nil, errorx.NewError(
 			errors.New("invalid credentials"),
 			errorx.ErrUnauthorized,
@@ -50,10 +50,11 @@ func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, e
 	now := time.Now()
 
 	claims := jwt.MapClaims{
-		"email": a.Username,
-		"sub":   a.Id,
+		"email": a.Email,
+		"sub":   a.AccountId,
 		"exp":   now.Add(time.Hour * s.cfg.TokenExp).Unix(),
 		"iat":   now.Unix(),
+		"roles": a.Roles,
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -79,7 +80,7 @@ func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterRe
 	}
 
 	a := model.NewAccount().
-		WithUsername(req.Username).
+		WithEmail(req.Email).
 		WithPassword(string(hashPwd))
 
 	created, err := s.repo.Create(ctx, a)

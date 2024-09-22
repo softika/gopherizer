@@ -1,12 +1,12 @@
 package account
 
 type RegisterRequest struct {
-	Username string `validate:"required,min=3,max=72"`
+	Email    string `validate:"required,min=3,max=72"`
 	Password string `validate:"required,min=8"`
 }
 
 type LoginRequest struct {
-	Username string `validate:"required,min=3,max=72"`
+	Email    string `validate:"required,min=3,max=72"`
 	Password string `validate:"required,min=8"`
 }
 

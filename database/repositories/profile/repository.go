@@ -17,9 +17,9 @@ var (
 	//go:embed sql/get_by_id.sql
 	getByIdSql string
 	//go:embed sql/create.sql
-	createUserSql string
+	createSql string
 	//go:embed sql/update.sql
-	updateUserSql string
+	updateSql string
 	//go:embed sql/delete_by_id.sql
 	deleteByIdSql string
 	//go:embed sql/lock_by_id.sql
@@ -39,47 +39,42 @@ func NewRepository(dbService database.Service) Repository {
 }
 
 func (r Repository) GetById(ctx context.Context, id string) (*model.Profile, error) {
-	u := new(model.Profile)
-	if err := r.db.Pool().
-		QueryRow(ctx, getByIdSql, id).
-		Scan(
-			&u.Id,
-			&u.FirstName,
-			&u.LastName,
-			&u.Email,
-			&u.CreatedAt,
-			&u.UpdatedAt,
-		); err != nil {
+	p := new(model.Profile)
+	if err := r.db.Pool().QueryRow(ctx, getByIdSql, id).Scan(
+		&p.Id,
+		&p.AccountId,
+		&p.FirstName,
+		&p.LastName,
+		&p.CreatedAt,
+		&p.UpdatedAt,
+	); err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return p, nil
 }
 
-func (r Repository) Create(ctx context.Context, u *model.Profile) (*model.Profile, error) {
-	err := r.db.Pool().QueryRow(ctx, createUserSql,
-		u.FirstName, // $1
-		u.LastName,  // $2
-		u.Email,     // $3
-	).Scan(&u.Id, &u.CreatedAt, &u.UpdatedAt)
-	if err != nil {
+func (r Repository) Create(ctx context.Context, p *model.Profile) (*model.Profile, error) {
+	if err := r.db.Pool().QueryRow(ctx, createSql,
+		p.AccountId, // $1
+		p.FirstName, // $2
+		p.LastName,  // $3
+	).Scan(&p.Id, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return p, nil
 }
 
-func (r Repository) Update(ctx context.Context, u *model.Profile) (*model.Profile, error) {
-	err := r.db.Pool().QueryRow(ctx, updateUserSql,
-		u.FirstName, // $1
-		u.LastName,  // $2
-		u.Email,     // $3
-		u.Id,        // $4
-	).Scan(&u.Id, &u.CreatedAt, &u.UpdatedAt)
-	if err != nil {
+func (r Repository) Update(ctx context.Context, p *model.Profile) (*model.Profile, error) {
+	if err := r.db.Pool().QueryRow(ctx, updateSql,
+		p.FirstName, // $1
+		p.LastName,  // $2
+		p.Id,        // $3
+	).Scan(&p.Id, &p.CreatedAt, &p.UpdatedAt); err != nil {
 		return nil, err
 	}
-	return u, nil
+	return p, nil
 }
 
 func (r Repository) DeleteById(ctx context.Context, id string) error {
@@ -88,7 +83,7 @@ func (r Repository) DeleteById(ctx context.Context, id string) error {
 }
 
 func (r Repository) LockById(ctx context.Context, tx pgx.Tx, id string) error {
-	var u model.Profile
+	var p model.Profile
 
 	row, err := tx.Query(ctx, lockByIdSql, id)
 	if err != nil {
@@ -103,7 +98,7 @@ func (r Repository) LockById(ctx context.Context, tx pgx.Tx, id string) error {
 		)
 	}
 
-	if err = row.Scan(&u.Id); err != nil {
+	if err = row.Scan(&p.Id); err != nil {
 		return fmt.Errorf("failed to scan profile: %w", err)
 	}
 

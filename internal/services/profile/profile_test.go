@@ -3,11 +3,11 @@ package profile
 import (
 	"context"
 	"testing"
-	"tldw/internal/model"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
+	"tldw/internal/model"
 	"tldw/internal/services/profile/mock"
 )
 
@@ -22,7 +22,6 @@ func TestService_Create(t *testing.T) {
 		return CreateRequest{
 			FirstName: "John",
 			LastName:  "Doe",
-			Email:     "john.doe@fake.com",
 		}
 	}
 
@@ -38,8 +37,7 @@ func TestService_Create(t *testing.T) {
 			mockFn: func(r *mock.MockRepository) {
 				u := model.NewProfile().
 					WithFirstName("John").
-					WithLastName("Doe").
-					WithEmail("john.doe@fake.com")
+					WithLastName("Doe")
 
 				r.EXPECT().
 					Create(ctx, gomock.Any()).
@@ -76,7 +74,6 @@ func TestService_Create(t *testing.T) {
 			if err != nil && tt.wantErr(t, err) {
 				return
 			}
-			assert.Equal(t, tt.req.Email, got.Email)
 			assert.Equal(t, tt.req.FirstName, got.FirstName)
 			assert.Equal(t, tt.req.LastName, got.LastName)
 		})
@@ -160,14 +157,12 @@ func TestService_GetById(t *testing.T) {
 			mockFn: func(r *mock.MockRepository) {
 				u := model.NewProfile().
 					WithFirstName("John").
-					WithLastName("Doe").
-					WithEmail("fake@email.com")
+					WithLastName("Doe")
 				r.EXPECT().GetById(ctx, id).Return(u, nil)
 			},
 			want: &Response{
 				FirstName: "John",
 				LastName:  "Doe",
-				Email:     "fake@email.com",
 			},
 			wantErr: assert.NoError,
 		},
@@ -199,7 +194,6 @@ func TestService_GetById(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, tt.want.Email, got.Email)
 			assert.Equal(t, tt.want.FirstName, got.FirstName)
 			assert.Equal(t, tt.want.LastName, got.LastName)
 		})

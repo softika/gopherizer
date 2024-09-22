@@ -3,12 +3,12 @@ package account
 import (
 	"context"
 	"testing"
-	"tldw/internal/model"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
 	"tldw/config"
+	"tldw/internal/model"
 	"tldw/internal/services/account/mock"
 )
 
@@ -33,12 +33,12 @@ func TestService_Login(t *testing.T) {
 		{
 			name: "Success",
 			req: LoginRequest{
-				Username: "user",
+				Email:    "user@fake.com",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				m.EXPECT().GetByUsername(ctx, "user").Return(&model.Account{
-					Username: "user",
+				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&model.Identity{
+					Email:    "user@fake.com",
 					Password: "$2a$10$.2/hbR6YIEfp4a7zvZ7xpO0fUUySsjM6.wgH0aWuqFN/sJPR5uEFq",
 				}, nil)
 			},
@@ -47,25 +47,25 @@ func TestService_Login(t *testing.T) {
 		{
 			name: "Invalid credentials",
 			req: LoginRequest{
-				Username: "user",
+				Email:    "user@fake.com",
 				Password: "invalid",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				m.EXPECT().GetByUsername(ctx, "user").Return(&model.Account{
-					Username: "user",
+				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&model.Identity{
+					Email:    "user@fake.com",
 					Password: "$2a$10$.2/hbR6YIEfp4a7zvZ7xpO0fUUySsjM6.wgH0aWuqFN/sJPR5uEFq",
 				}, nil)
 			},
 			wantErr: assert.Error,
 		},
 		{
-			name: "Invalid Username",
+			name: "Invalid Email",
 			req: LoginRequest{
-				Username: "invalid",
+				Email:    "invalid",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				m.EXPECT().GetByUsername(ctx, "invalid").Return(nil, assert.AnError)
+				m.EXPECT().GetByEmail(ctx, "invalid").Return(nil, assert.AnError)
 			},
 			wantErr: assert.Error,
 		},
@@ -112,13 +112,13 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "Success",
 			req: RegisterRequest{
-				Username: "user",
+				Email:    "user@fake.com",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {
 				got := model.NewAccount().
 					WithId("1").
-					WithUsername("user").
+					WithEmail("user@fake.com").
 					WithPassword("$2a$10$DMu6hB30jb9SfUiNszbkzufXqeCgFFJPbMQeY5VpYNcYbWC.ZUB6a")
 
 				m.EXPECT().Create(ctx, gomock.Any()).Return(got, nil)
@@ -128,7 +128,7 @@ func TestService_Register(t *testing.T) {
 		{
 			name: "Failed",
 			req: RegisterRequest{
-				Username: "user",
+				Email:    "user@fake.com",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {

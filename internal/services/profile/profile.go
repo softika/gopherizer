@@ -38,8 +38,7 @@ func (s Service) GetById(ctx context.Context, id string) (*Response, error) {
 func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, error) {
 	u := model.NewProfile().
 		WithFirstName(req.FirstName).
-		WithLastName(req.LastName).
-		WithEmail(req.Email)
+		WithLastName(req.LastName)
 
 	created, err := s.repo.Create(ctx, u)
 	if err != nil {
@@ -59,8 +58,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 	u := model.NewProfile().
 		WithId(req.Id).
 		WithFirstName(req.FirstName).
-		WithLastName(req.LastName).
-		WithEmail(req.Email)
+		WithLastName(req.LastName)
 
 	updated, err := s.repo.Update(ctx, u)
 	if err != nil {

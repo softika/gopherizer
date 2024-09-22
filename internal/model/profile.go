@@ -4,7 +4,7 @@ type Profile struct {
 	Base
 	FirstName string `db:"first_name"`
 	LastName  string `db:"last_name"`
-	Email     string `db:"email"`
+	AccountId string `db:"account_id"`
 }
 
 func NewProfile() *Profile {
@@ -23,10 +23,5 @@ func (p *Profile) WithFirstName(firstName string) *Profile {
 
 func (p *Profile) WithLastName(lastName string) *Profile {
 	p.LastName = lastName
-	return p
-}
-
-func (p *Profile) WithEmail(email string) *Profile {
-	p.Email = email
 	return p
 }

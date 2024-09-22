@@ -2,7 +2,7 @@ package model
 
 type Account struct {
 	Base
-	Username string `json:"username"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -15,8 +15,8 @@ func (a *Account) WithId(id string) *Account {
 	return a
 }
 
-func (a *Account) WithUsername(username string) *Account {
-	a.Username = username
+func (a *Account) WithEmail(email string) *Account {
+	a.Email = email
 	return a
 }
 

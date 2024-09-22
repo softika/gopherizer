@@ -3,21 +3,16 @@ package repositories
 import (
 	"context"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"tldw/database"
 )
 
-// Tx defines a transaction interface.
-type Tx interface {
-	Commit(ctx context.Context) error
-	Rollback(ctx context.Context) error
-}
-
 // TxManager defines a method to execute a transaction from Begin until Commit or Rollback.
 type TxManager interface {
-	Begin(context.Context) (Tx, error)
-	Execute(context.Context, func(Tx) error) error
+	Begin(context.Context) (pgx.Tx, error)
+	Execute(context.Context, func(pgx.Tx) error) error
 }
 
 func NewTxManager(db database.Service) TxManager {
@@ -28,11 +23,11 @@ type txManager struct {
 	*pgxpool.Pool
 }
 
-func (tm *txManager) Begin(ctx context.Context) (Tx, error) {
+func (tm *txManager) Begin(ctx context.Context) (pgx.Tx, error) {
 	return tm.Pool.Begin(ctx)
 }
 
-func (tm *txManager) Execute(ctx context.Context, fn func(tx Tx) error) error {
+func (tm *txManager) Execute(ctx context.Context, fn func(tx pgx.Tx) error) error {
 	tx, err := tm.Begin(ctx)
 	if err != nil {
 		return err

@@ -1,8 +1,10 @@
 package tests
 
 import (
-	"github.com/stretchr/testify/suite"
 	"testing"
+
+	"github.com/stretchr/testify/suite"
+
 	"tldw/database"
 	"tldw/http/api"
 	"tldw/logging"
