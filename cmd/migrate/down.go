@@ -7,7 +7,7 @@ import (
 	"tldw/logging"
 )
 
-var MigrateDownCmd = &cobra.Command{
+var DownCmd = &cobra.Command{
 	Use:   "down",
 	Short: "rollback database migrations",
 	Long:  "rollback database migrations for all tables",

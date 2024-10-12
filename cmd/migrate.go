@@ -7,8 +7,8 @@ import (
 )
 
 func init() {
-	migrateCmd.AddCommand(migrate.MigrateUpCmd)
-	migrateCmd.AddCommand(migrate.MigrateDownCmd)
+	migrateCmd.AddCommand(migrate.UpCmd)
+	migrateCmd.AddCommand(migrate.DownCmd)
 
 	rootCmd.AddCommand(migrateCmd)
 }

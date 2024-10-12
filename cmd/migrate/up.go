@@ -8,7 +8,7 @@ import (
 	"tldw/config"
 )
 
-var MigrateUpCmd = &cobra.Command{
+var UpCmd = &cobra.Command{
 	Use:   "up",
 	Short: "runs up database migrations",
 	Long:  "runs up database migrations for all storage options defined in go-template",

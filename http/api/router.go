@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"tldw/config"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,15 +16,22 @@ type Router struct {
 	secretKey   string
 }
 
-func NewRouter(environment string, secretKey string) *Router {
+func NewRouter(cfg *config.Config) *Router {
 	r := chi.NewRouter()
 	defaultMiddlewares(r)
 
-	return &Router{
+	api := &Router{
 		Router:      r,
-		environment: environment,
-		secretKey:   secretKey,
+		environment: cfg.App.Environment,
+		secretKey:   cfg.Auth.Secret,
 	}
+
+	s := api.initServices(cfg.Auth, api.initRepositories(cfg.Database))
+	h := api.initHandlers(s)
+
+	api.initRoutes(h)
+
+	return api
 }
 
 func defaultMiddlewares(r *chi.Mux) {

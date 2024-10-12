@@ -38,6 +38,13 @@ func (s *RepositoriesTestSuite) TestAccountRepository_Create() {
 			},
 			wantErr: assert.Error,
 		},
+		{
+			name: "existing email",
+			input: &model.Account{
+				Email: "john@mail.com",
+			},
+			wantErr: assert.Error,
+		},
 	}
 
 	for _, tt := range tests {
@@ -81,6 +88,11 @@ func (s *RepositoriesTestSuite) TestAccountRepository_GetByEmail() {
 			email:   "tester@fake.com",
 			wantErr: assert.Error,
 		},
+		{
+			name:    "empty email",
+			email:   "",
+			wantErr: assert.Error,
+		},
 	}
 
 	for _, tt := range tests {
@@ -97,6 +109,57 @@ func (s *RepositoriesTestSuite) TestAccountRepository_GetByEmail() {
 			s.Assert().NotEmpty(identity.Password)
 			s.Assert().Equal(tt.email, identity.Email)
 			s.Assert().NotEmpty(identity.Roles)
+		})
+	}
+}
+
+func (s *RepositoriesTestSuite) TestRepository_ChangePassword() {
+	repo := account.NewRepository(s.dbService)
+
+	type args struct {
+		id          string
+		oldPassword string
+		newPassword string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr assert.ErrorAssertionFunc
+	}{
+		{
+			name: "valid password change",
+			args: args{
+				id:          "2f6f112a-a8e2-42c3-a6b0-c15e86d01704",
+				oldPassword: "password",
+				newPassword: "new-password",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "invalid old password",
+			args: args{
+				id:          "2f6f112a-a8e2-42c3-a6b0-c15e86d01704",
+				oldPassword: "invalid-password",
+				newPassword: "new-password",
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "invalid id",
+			args: args{
+				id:          "invalid-id",
+				oldPassword: "password",
+				newPassword: "new-password",
+			},
+			wantErr: assert.Error,
+		},
+	}
+
+	for _, tt := range tests {
+		s.T().Run(tt.name, func(t *testing.T) {
+			err := repo.ChangePassword(s.dbContainer.Ctx, tt.args.id, tt.args.oldPassword, tt.args.newPassword)
+
+			tt.wantErr(t, err, "ChangePassword() error = %v, wantErr %v", err, tt.wantErr)
 		})
 	}
 }

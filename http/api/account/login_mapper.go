@@ -7,13 +7,13 @@ import (
 	svc "tldw/internal/services/account"
 )
 
-type LoginRequestMap struct{}
+type LoginRequestMapper struct{}
 
-func NewLoginRequestMap() LoginRequestMap {
-	return LoginRequestMap{}
+func NewLoginRequestMapper() LoginRequestMapper {
+	return LoginRequestMapper{}
 }
 
-func (m LoginRequestMap) Map(r *http.Request) (svc.LoginRequest, error) {
+func (m LoginRequestMapper) Map(r *http.Request) (svc.LoginRequest, error) {
 	req := new(svc.LoginRequest)
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
@@ -23,13 +23,13 @@ func (m LoginRequestMap) Map(r *http.Request) (svc.LoginRequest, error) {
 	return *req, nil
 }
 
-type LoginResponseMap struct{}
+type LoginResponseMapper struct{}
 
-func NewLoginResponseMap() LoginResponseMap {
-	return LoginResponseMap{}
+func NewLoginResponseMapper() LoginResponseMapper {
+	return LoginResponseMapper{}
 }
 
-func (m LoginResponseMap) Map(w http.ResponseWriter, out *svc.LoginResponse) error {
+func (m LoginResponseMapper) Map(w http.ResponseWriter, out *svc.LoginResponse) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(out)

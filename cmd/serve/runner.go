@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"tldw/config"
+	"tldw/http/api"
 	"tldw/http/server"
 	"tldw/logging"
 )
@@ -21,14 +22,14 @@ func Run() {
 		os.Exit(1)
 	}
 
-	api := initApi(cfg)
+	router := api.NewRouter(cfg)
 
 	srv := server.New(cfg)
 
 	// Start the server in a goroutine.
 	go func() {
 		log.Info("starting the server...", "address", cfg.Http.Host+":"+cfg.Http.Port)
-		if err = srv.Run(api); !errors.Is(err, http.ErrServerClosed) {
+		if err = srv.Run(router); !errors.Is(err, http.ErrServerClosed) {
 			log.Error("server failed to run", "error", err)
 			os.Exit(1)
 		}
@@ -36,7 +37,7 @@ func Run() {
 	}()
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 	<-ctx.Done()
 

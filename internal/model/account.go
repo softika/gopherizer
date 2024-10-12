@@ -2,8 +2,8 @@ package model
 
 type Account struct {
 	Base
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `db:"email"`
+	Password string `db:"password"`
 }
 
 func NewAccount() *Account {
