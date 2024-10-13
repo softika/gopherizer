@@ -17,7 +17,7 @@ func TestService_Login(t *testing.T) {
 
 	ctx := context.Background()
 
-	cfg := config.Auth{
+	cfg := config.AuthConfig{
 		Secret:   "secret",
 		TokenExp: 3,
 	}
@@ -96,7 +96,7 @@ func TestService_Register(t *testing.T) {
 
 	ctx := context.Background()
 
-	cfg := config.Auth{
+	cfg := config.AuthConfig{
 		Secret:   "secret",
 		TokenExp: 3,
 	}
@@ -164,7 +164,7 @@ func TestService_ChangePassword(t *testing.T) {
 
 	ctx := context.Background()
 
-	cfg := config.Auth{
+	cfg := config.AuthConfig{
 		Secret:   "secret",
 		TokenExp: 3,
 	}

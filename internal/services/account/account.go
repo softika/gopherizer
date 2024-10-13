@@ -23,11 +23,11 @@ type Repository interface {
 }
 
 type Service struct {
-	cfg  config.Auth
+	cfg  config.AuthConfig
 	repo Repository
 }
 
-func NewService(cfg config.Auth, r Repository) Service {
+func NewService(cfg config.AuthConfig, r Repository) Service {
 	return Service{cfg: cfg, repo: r}
 }
 

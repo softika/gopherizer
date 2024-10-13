@@ -2,6 +2,7 @@ package tests
 
 import (
 	"testing"
+	"tldw/config"
 
 	"github.com/stretchr/testify/suite"
 
@@ -28,7 +29,14 @@ func (s *E2ETestSuite) SetupSuite() {
 	}
 
 	s.dbService = database.New(s.dbContainer.Config)
-	s.router = api.NewRouter("test", "test-secret-key")
+	cfg := &config.Config{
+		App: config.AppConfig{Environment: "test"},
+		Auth: config.AuthConfig{
+			Secret:   "test-secret-key",
+			TokenExp: 20,
+		},
+	}
+	s.router = api.NewRouter(cfg)
 }
 
 func (s *E2ETestSuite) TearDownSuite() {

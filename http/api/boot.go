@@ -39,7 +39,7 @@ type services struct {
 	profile svcProfile.Service
 }
 
-func (r *Router) initServices(cfg config.Auth, s repositories) services {
+func (r *Router) initServices(cfg config.AuthConfig, s repositories) services {
 	return services{
 		account: svcAccount.NewService(cfg, s.account),
 		health:  svcHealth.NewService(s.db),
