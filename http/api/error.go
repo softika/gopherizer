@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	errors2 "tldw/internal/errorx"
+	"tldw/internal/errorx"
 )
 
 type Error struct {
@@ -26,14 +26,14 @@ func newServiceError(internal error) Error {
 	code := http.StatusInternalServerError
 	// Check if the error is a service error
 	// and set the appropriate HTTP status code
-	var errService *errors2.Error
+	var errService *errorx.Error
 	if errors.As(internal, &errService) {
 		switch errService.Code {
-		case errors2.ErrInvalidInput:
+		case errorx.ErrInvalidInput:
 			code = http.StatusBadRequest
-		case errors2.ErrForbidden:
+		case errorx.ErrForbidden:
 			code = http.StatusForbidden
-		case errors2.ErrNotFound:
+		case errorx.ErrNotFound:
 			code = http.StatusNotFound
 		default:
 			code = http.StatusInternalServerError
