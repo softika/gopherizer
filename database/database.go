@@ -56,7 +56,7 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		log := logging.Get()
+		log := logging.Logger()
 		log.Info("creating a new database connection pool...")
 
 		ctx := context.Background()
@@ -83,7 +83,7 @@ func New(cfg config.DatabaseConfig) Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health(ctx context.Context) map[string]string {
-	log := logging.Get()
+	log := logging.Logger()
 
 	stats := make(map[string]string)
 
@@ -100,7 +100,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 	stats["status"] = "up"
 	stats["message"] = "It's healthy"
 
-	// Get database stats (like open connections, in use, idle, etc.)
+	// Logger database stats (like open connections, in use, idle, etc.)
 	poolStat := s.pool.Stat()
 	stats["max_connections"] = strconv.Itoa(int(poolStat.MaxConns()))
 	stats["total_connections"] = strconv.Itoa(int(poolStat.TotalConns()))
@@ -139,7 +139,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	logging.Get().Info("closing the database connection...")
+	logging.Logger().Info("closing the database connection...")
 	s.pool.Close()
 	return nil
 }

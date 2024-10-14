@@ -53,7 +53,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	// Map request
 	in, err := h.requestMapper.Map(r)
 	if err != nil {
-		logging.Get().Error("failed to map request", "error", err)
+		logging.Logger().Error("failed to map request", "error", err)
 		return newError(http.StatusBadRequest, err.Error(), err)
 	}
 
@@ -61,7 +61,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	if h.validator != nil {
 		err = h.validator.StructCtx(r.Context(), in)
 		if err != nil {
-			logging.Get().Error("request validation failed", "error", err)
+			logging.Logger().Error("request validation failed", "error", err)
 			return newError(http.StatusBadRequest, err.Error(), err)
 		}
 	}
@@ -69,7 +69,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	// Call out to service function
 	out, err := h.serviceFunc(r.Context(), in)
 	if err != nil {
-		logging.Get().Error("service function failed", "error", err)
+		logging.Logger().Error("service function failed", "error", err)
 		return newServiceError(err)
 	}
 

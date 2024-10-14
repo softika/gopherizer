@@ -38,7 +38,7 @@ func TestLogger(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := Get()
+			got := Logger()
 			assert.NotNil(t, got)
 
 			got.WithGroup("logger test")

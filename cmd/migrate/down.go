@@ -17,7 +17,7 @@ var DownCmd = &cobra.Command{
 }
 
 func down() {
-	lgr := logging.Get()
+	lgr := logging.Logger()
 
 	cfg, err := config.New()
 	if err != nil {

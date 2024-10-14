@@ -122,14 +122,14 @@ goose -dir database/migrations create xxx sql
 
 ### Generating mocks
 
-We use [mockgen](https://github.com/uber-go/mock/tree/main/mockgen) to generate mock.
+We use [gomock](https://github.com/uber-go/mock) to generate mocks.
 
 If you change the interface and need to create/update the generated mock, make
 sure to always run this command.
 
 ```sh
 # note that PWD should be the root package of the source generation files.
-go generate
+make mocks
 ```
 
 ## Testing
@@ -143,53 +143,4 @@ You can also do this manually by running `go test ./... -parallel -count=5`
 
 
 ## MakeFile
-
-build the application
-```bash
-make build
-```
-
-run the application
-```bash
-make run
-```
-
-Create DB container
-```bash
-make docker-run
-```
-
-Shutdown DB container
-```bash
-make docker-down
-```
-
-Migrate DB
-```bash
-make migrate-up
-```
-
-Rollback DB migration
-```bash
-make migrate-down
-```
-
-live reload the application
-```bash
-make watch
-```
-
-run the test suite
-```bash
-make test
-```
-
-run tests with race detector
-```bash
-make race
-```
-
-clean up binary from the last build
-```bash
-make clean
-```
+Check the [Makefile](Makefile) for more available commands.

@@ -15,7 +15,7 @@ import (
 )
 
 func Run() {
-	log := logging.Get()
+	log := logging.Logger()
 	cfg, err := config.New()
 	if err != nil {
 		log.Error("failed to read config", "error", err)
@@ -24,7 +24,7 @@ func Run() {
 
 	router := api.NewRouter(cfg)
 
-	srv := server.New(cfg)
+	srv := server.New(cfg.Http)
 
 	// Start the server in a goroutine.
 	go func() {

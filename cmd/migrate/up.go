@@ -18,7 +18,7 @@ var UpCmd = &cobra.Command{
 }
 
 func up() {
-	lgr := logging.Get()
+	lgr := logging.Logger()
 
 	cfg, err := config.New()
 	if err != nil {

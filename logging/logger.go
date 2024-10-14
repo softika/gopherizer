@@ -12,7 +12,7 @@ var (
 	once sync.Once
 )
 
-func Get() *slog.Logger {
+func Logger() *slog.Logger {
 	once.Do(func() {
 		logLevel := slog.LevelInfo
 

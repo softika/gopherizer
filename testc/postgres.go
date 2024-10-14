@@ -25,7 +25,7 @@ type PostgresContainer struct {
 }
 
 func RunPostgres() (*PostgresContainer, error) {
-	log := logging.Get()
+	log := logging.Logger()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 	req := testcontainers.ContainerRequest{
