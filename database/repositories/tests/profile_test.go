@@ -172,7 +172,7 @@ func (s *RepositoriesTestSuite) TestProfileRepository_DeleteById() {
 		},
 		{
 			name:    "valid id",
-			input:   "0dd35f9a-0d20-41f1-80c2-d7993e313fb4",
+			input:   "0dd35f9a-0d20-41f1-80c2-d7993e313fb6",
 			wantErr: assert.NoError,
 		},
 	}
