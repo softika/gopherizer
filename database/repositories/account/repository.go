@@ -71,7 +71,7 @@ func (r Repository) GetByEmail(ctx context.Context, email string) (*model.Identi
 		); err != nil {
 			return errorx.NewError(
 				fmt.Errorf("failed to get account by email: %w", err),
-				errorx.ErrNotFound,
+				errorx.ErrInvalidInput,
 			)
 		}
 

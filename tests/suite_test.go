@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"github.com/pressly/goose/v3"
 	"testing"
 	"tldw/config"
 
@@ -29,14 +30,28 @@ func (s *E2ETestSuite) SetupSuite() {
 	}
 
 	s.dbService = database.New(s.dbContainer.Config)
+
+	s.prepareDb()
+
 	cfg := &config.Config{
 		App: config.AppConfig{Environment: "test"},
 		Auth: config.AuthConfig{
 			Secret:   "test-secret-key",
 			TokenExp: 20,
 		},
+		Database: s.dbContainer.Config,
 	}
 	s.router = api.NewRouter(cfg)
+}
+
+func (s *E2ETestSuite) prepareDb() {
+	if err := goose.Up(s.dbService.DB(), "../database/migrations"); err != nil {
+		s.T().Fatal("failed to run migrations", err)
+	}
+
+	if err := goose.Up(s.dbService.DB(), "testdata"); err != nil {
+		s.T().Fatal("failed to seed test data", err)
+	}
 }
 
 func (s *E2ETestSuite) TearDownSuite() {

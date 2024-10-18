@@ -85,10 +85,7 @@ func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterRe
 
 	created, err := s.repo.Create(ctx, a)
 	if err != nil {
-		return nil, errorx.NewError(
-			fmt.Errorf("failed to create account: %w", err),
-			errorx.ErrInternal,
-		)
+		return nil, err
 	}
 
 	res := new(RegisterResponse)
