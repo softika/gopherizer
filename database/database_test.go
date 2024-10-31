@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"tldw/config"
-	"tldw/testc"
+	"tldw/testinfra"
 )
 
 var dbCfg config.DatabaseConfig
 
 func TestMain(m *testing.M) {
-	postgres, err := testc.RunPostgres()
+	postgres, err := testinfra.RunPostgres()
 	if err != nil {
 		log.Fatalf("could not start postgres container: %v", err)
 	}

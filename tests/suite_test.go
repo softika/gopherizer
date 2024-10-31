@@ -10,13 +10,13 @@ import (
 	"tldw/database"
 	"tldw/http/api"
 	"tldw/logging"
-	"tldw/testc"
+	"tldw/testinfra"
 )
 
 type E2ETestSuite struct {
 	suite.Suite
 
-	dbContainer *testc.PostgresContainer
+	dbContainer *testinfra.PostgresContainer
 	dbService   database.Service
 	router      *api.Router
 }
@@ -24,7 +24,7 @@ type E2ETestSuite struct {
 func (s *E2ETestSuite) SetupSuite() {
 	var err error
 
-	s.dbContainer, err = testc.RunPostgres()
+	s.dbContainer, err = testinfra.RunPostgres()
 	if err != nil {
 		s.T().Fatal("failed to start postgres container", err)
 	}

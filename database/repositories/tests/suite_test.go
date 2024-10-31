@@ -8,19 +8,19 @@ import (
 
 	"tldw/database"
 	"tldw/logging"
-	"tldw/testc"
+	"tldw/testinfra"
 )
 
 type RepositoriesTestSuite struct {
 	suite.Suite
-	dbContainer *testc.PostgresContainer
+	dbContainer *testinfra.PostgresContainer
 	dbService   database.Service
 }
 
 func (s *RepositoriesTestSuite) SetupSuite() {
 	var err error
 
-	s.dbContainer, err = testc.RunPostgres()
+	s.dbContainer, err = testinfra.RunPostgres()
 	if err != nil {
 		s.T().Fatal("failed to start postgres container", err)
 	}

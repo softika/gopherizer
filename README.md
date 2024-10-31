@@ -13,14 +13,14 @@ These instructions will get you a copy of the project up and running on your loc
 
 Top Level Directories
 
-- [cmd/](cmd) - contains cli commands like `migrate` and `server`.
-- [config/](config) - contains configuration and loading environment variables.
-- [database/](database) - contains database service, repositories and migration files.
+- [cmd/](cmd) - cli commands like `migrate` and `server`.
+- [config/](config) - configuration and loading environment variables.
+- [database/](database) - database service, repositories and migration files.
 - [http/](http) - deals with transport layer, input sanitation and consumes `internal/services` layer.
-- [internal/](internal) - contains core logic, `services` as business use cases and `model` as domain entities.
-- [logging/](logging) - contains structural logging service.
-- [testc/](testc) - contains test-containers utilities.
-- [tests/](tests) - contains e2e tests.
+- [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities.
+- [logging/](logging) - structural logging service.
+- [testinfra/](testinfra) - test-containers utilities.
+- [tests/](tests) - e2e tests.
 
 ### http
 `http` folder deals with the transport protocol and typically input sanitation.

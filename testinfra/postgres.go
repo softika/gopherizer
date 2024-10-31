@@ -1,4 +1,4 @@
-package testc
+package testinfra
 
 import (
 	"context"
