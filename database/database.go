@@ -12,8 +12,9 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 
+	"github.com/softika/slogging"
+
 	"tldw/config"
-	"tldw/logging"
 )
 
 //go:embed migrations/*.sql
@@ -56,7 +57,7 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		log := logging.Logger()
+		log := slogging.Slogger()
 		log.Info("creating a new database connection pool...")
 
 		ctx := context.Background()
@@ -83,7 +84,7 @@ func New(cfg config.DatabaseConfig) Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health(ctx context.Context) map[string]string {
-	log := logging.Logger()
+	log := slogging.Slogger()
 
 	stats := make(map[string]string)
 
@@ -92,7 +93,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.Error("db is down", "error", err)
+		log.ErrorContext(ctx, "db is down", "error", err)
 		return stats
 	}
 
@@ -139,7 +140,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	logging.Logger().Info("closing the database connection...")
+	slogging.Slogger().Info("closing the database connection...")
 	s.pool.Close()
 	return nil
 }

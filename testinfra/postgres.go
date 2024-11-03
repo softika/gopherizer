@@ -7,8 +7,9 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
+	"github.com/softika/slogging"
+
 	"tldw/config"
-	"tldw/logging"
 )
 
 const (
@@ -25,7 +26,7 @@ type PostgresContainer struct {
 }
 
 func RunPostgres() (*PostgresContainer, error) {
-	log := logging.Logger()
+	log := slogging.Slogger()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 	req := testcontainers.ContainerRequest{

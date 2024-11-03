@@ -2,10 +2,11 @@ package migrate
 
 import (
 	"github.com/spf13/cobra"
-	"tldw/database"
-	"tldw/logging"
+
+	"github.com/softika/slogging"
 
 	"tldw/config"
+	"tldw/database"
 )
 
 var UpCmd = &cobra.Command{
@@ -18,7 +19,7 @@ var UpCmd = &cobra.Command{
 }
 
 func up() {
-	lgr := logging.Logger()
+	lgr := slogging.Slogger()
 
 	cfg, err := config.New()
 	if err != nil {

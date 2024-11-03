@@ -10,10 +10,11 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/softika/slogging"
+
 	"tldw/config"
 	"tldw/internal/errorx"
 	"tldw/internal/model"
-	"tldw/logging"
 )
 
 type Repository interface {
@@ -32,15 +33,17 @@ func NewService(cfg config.AuthConfig, r Repository) Service {
 }
 
 func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, error) {
+	logger := slogging.Slogger()
+
 	a, err := s.repo.GetByEmail(ctx, req.Email)
 	if err != nil {
-		logging.Logger().Error("failed to get user by username", "email", req.Email, "error", err)
+		logger.ErrorContext(ctx, "failed to get user by username", "email", req.Email, "error", err)
 		return nil, err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(a.Password), []byte(req.Password))
 	if err != nil {
-		logging.Logger().Error("invalid credentials", "email", req.Email, "error", err)
+		logger.ErrorContext(ctx, "invalid credentials", "email", req.Email, "error", err)
 		return nil, errorx.NewError(
 			errors.New("invalid credentials"),
 			errorx.ErrUnauthorized,
@@ -73,6 +76,7 @@ func (s Service) Login(ctx context.Context, req LoginRequest) (*LoginResponse, e
 func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterResponse, error) {
 	hashPwd, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to hash password", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to hash password: %w", err),
 			errorx.ErrInternal,
@@ -97,6 +101,7 @@ func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterRe
 func (s Service) ChangePassword(ctx context.Context, req ChangePasswordRequest) (*ChangePasswordResponse, error) {
 	err := s.repo.ChangePassword(ctx, req.AccountId, req.OldPassword, req.NewPassword)
 	if err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to change password", "error", err)
 		return nil, err
 	}
 

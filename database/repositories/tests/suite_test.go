@@ -6,8 +6,9 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/softika/slogging"
+
 	"tldw/database"
-	"tldw/logging"
 	"tldw/testinfra"
 )
 
@@ -38,11 +39,11 @@ func (s *RepositoriesTestSuite) SetupSuite() {
 
 func (s *RepositoriesTestSuite) TearDownSuite() {
 	if err := s.dbService.Close(); err != nil {
-		logging.Logger().Warn("failed to close db connection", "error", err)
+		slogging.Slogger().Warn("failed to close db connection", "error", err)
 	}
 
 	if err := s.dbContainer.Shutdown(); err != nil {
-		logging.Logger().Warn("failed to shutdown postgres container", "error", err)
+		slogging.Slogger().Warn("failed to shutdown postgres container", "error", err)
 	}
 }
 

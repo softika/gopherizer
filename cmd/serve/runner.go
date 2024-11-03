@@ -8,14 +8,15 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/softika/slogging"
+
 	"tldw/config"
 	"tldw/http/api"
 	"tldw/http/server"
-	"tldw/logging"
 )
 
 func Run() {
-	log := logging.Logger()
+	log := slogging.Slogger()
 	cfg, err := config.New()
 	if err != nil {
 		log.Error("failed to read config", "error", err)

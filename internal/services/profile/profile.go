@@ -5,6 +5,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/softika/slogging"
+
 	"tldw/internal/errorx"
 	"tldw/internal/model"
 	"tldw/internal/services"
@@ -25,6 +27,7 @@ func NewService(r Repository) Service {
 func (s Service) GetById(ctx context.Context, id string) (*Response, error) {
 	u, err := s.repo.GetById(ctx, id)
 	if err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to get profile by id", "id", id, "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to get profile by id: %w", err),
 			errorx.ErrNotFound,
@@ -42,6 +45,7 @@ func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, erro
 
 	created, err := s.repo.Create(ctx, u)
 	if err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to create profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to create profile: %w", err),
 			errorx.ErrInternal,
@@ -62,6 +66,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 
 	updated, err := s.repo.Update(ctx, u)
 	if err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to update profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to update profile: %w", err),
 			errorx.ErrInternal,
@@ -76,6 +81,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 
 func (s Service) DeleteById(ctx context.Context, id string) (bool, error) {
 	if err := s.repo.DeleteById(ctx, id); err != nil {
+		slogging.Slogger().ErrorContext(ctx, "failed to delete profile by id", "id", id, "error", err)
 		return false, errorx.NewError(
 			fmt.Errorf("failed to delete profile by id: %w", err),
 			errorx.ErrInternal,

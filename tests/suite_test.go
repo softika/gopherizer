@@ -7,9 +7,10 @@ import (
 
 	"github.com/stretchr/testify/suite"
 
+	"github.com/softika/slogging"
+
 	"tldw/database"
 	"tldw/http/api"
-	"tldw/logging"
 	"tldw/testinfra"
 )
 
@@ -56,11 +57,11 @@ func (s *E2ETestSuite) prepareDb() {
 
 func (s *E2ETestSuite) TearDownSuite() {
 	if err := s.dbService.Close(); err != nil {
-		logging.Logger().Warn("failed to close db connection", "error", err)
+		slogging.Slogger().Warn("failed to close db connection", "error", err)
 	}
 
 	if err := s.dbContainer.Shutdown(); err != nil {
-		logging.Logger().Warn("failed to shutdown postgres container", "error", err)
+		slogging.Slogger().Warn("failed to shutdown postgres container", "error", err)
 	}
 }
 
