@@ -2,10 +2,10 @@ package errorx
 
 import "errors"
 
-type ErrorCode int
+type ErrorType int
 
 const (
-	ErrInternal ErrorCode = iota
+	ErrInternal ErrorType = iota
 	ErrInvalidInput
 	ErrForbidden
 	ErrNotFound
@@ -14,20 +14,20 @@ const (
 
 type Error struct {
 	Err  error
-	Code ErrorCode
+	Type ErrorType
 }
 
-func NewError(err error, code ErrorCode) *Error {
+func NewError(err error, code ErrorType) *Error {
 	return &Error{
 		Err:  err,
-		Code: code,
+		Type: code,
 	}
 }
 
-func NewErrorMessage(msg string, code ErrorCode) *Error {
+func NewErrorMessage(msg string, errType ErrorType) *Error {
 	return &Error{
 		Err:  errors.New(msg),
-		Code: code,
+		Type: errType,
 	}
 }
 

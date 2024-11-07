@@ -11,8 +11,8 @@ import (
 
 	"tldw/database"
 	"tldw/database/repositories"
-	"tldw/internal/errorx"
 	"tldw/internal/model"
+	"tldw/pkg/errorx"
 )
 
 var (

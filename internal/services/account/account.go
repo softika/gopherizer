@@ -13,8 +13,8 @@ import (
 	"github.com/softika/slogging"
 
 	"tldw/config"
-	"tldw/internal/errorx"
 	"tldw/internal/model"
+	"tldw/pkg/errorx"
 )
 
 type Repository interface {
