@@ -1,4 +1,4 @@
-package profile
+package profile_test
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"tldw/internal/model"
-	"tldw/internal/services/profile/mock"
+	"tldw/internal/profile"
+	"tldw/internal/profile/mock"
 )
 
 func TestService_Create(t *testing.T) {
@@ -18,8 +18,8 @@ func TestService_Create(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 
-	req := func() CreateRequest {
-		return CreateRequest{
+	req := func() profile.CreateRequest {
+		return profile.CreateRequest{
 			FirstName: "John",
 			LastName:  "Doe",
 		}
@@ -27,7 +27,7 @@ func TestService_Create(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     CreateRequest
+		req     profile.CreateRequest
 		mockFn  func(*mock.MockRepository)
 		wantErr assert.ErrorAssertionFunc
 	}{
@@ -35,7 +35,7 @@ func TestService_Create(t *testing.T) {
 			name: "success",
 			req:  req(),
 			mockFn: func(r *mock.MockRepository) {
-				u := model.NewProfile().
+				u := profile.New().
 					WithFirstName("John").
 					WithLastName("Doe")
 
@@ -63,7 +63,7 @@ func TestService_Create(t *testing.T) {
 
 			// given
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(repo)
+			s := profile.NewService(repo)
 
 			tt.mockFn(repo)
 
@@ -122,7 +122,7 @@ func TestService_DeleteById(t *testing.T) {
 
 			// given
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(repo)
+			s := profile.NewService(repo)
 			tt.mockFn(repo)
 
 			// when
@@ -148,19 +148,19 @@ func TestService_GetById(t *testing.T) {
 		name    string
 		req     string
 		mockFn  func(r *mock.MockRepository)
-		want    *Response
+		want    *profile.Response
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "success",
 			req:  id,
 			mockFn: func(r *mock.MockRepository) {
-				u := model.NewProfile().
+				u := profile.New().
 					WithFirstName("John").
 					WithLastName("Doe")
 				r.EXPECT().GetById(ctx, id).Return(u, nil)
 			},
-			want: &Response{
+			want: &profile.Response{
 				FirstName: "John",
 				LastName:  "Doe",
 			},
@@ -183,7 +183,7 @@ func TestService_GetById(t *testing.T) {
 
 			// given
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(repo)
+			s := profile.NewService(repo)
 			tt.mockFn(repo)
 
 			// when

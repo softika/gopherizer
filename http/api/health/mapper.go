@@ -3,8 +3,7 @@ package health
 import (
 	"encoding/json"
 	"net/http"
-
-	"tldw/internal/services/health"
+	"tldw/internal/health"
 )
 
 type RequestMapper struct{}

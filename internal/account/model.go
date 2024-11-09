@@ -1,12 +1,15 @@
-package model
+package account
+
+import "tldw/internal"
 
 type Account struct {
-	Base
+	internal.Base
+
 	Email    string `db:"email"`
 	Password string `db:"password"`
 }
 
-func NewAccount() *Account {
+func New() *Account {
 	return &Account{}
 }
 
@@ -23,4 +26,12 @@ func (a *Account) WithEmail(email string) *Account {
 func (a *Account) WithPassword(password string) *Account {
 	a.Password = password
 	return a
+}
+
+// Identity represents the user identity
+type Identity struct {
+	AccountId string
+	Email     string
+	Password  string
+	Roles     []string
 }

@@ -1,4 +1,4 @@
-//go:generate mockgen -source=profile.go -destination=./mock/profile.go -package=mock
+//go:generate mockgen -source=service.go -destination=./mock/service.go -package=mock
 package profile
 
 import (
@@ -7,13 +7,12 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/internal/model"
-	"tldw/internal/services"
+	"tldw/internal"
 	"tldw/pkg/errorx"
 )
 
 type Repository interface {
-	services.Repository[model.Profile, string]
+	internal.Repository[Profile, string]
 }
 
 type Service struct {
@@ -39,9 +38,7 @@ func (s Service) GetById(ctx context.Context, id string) (*Response, error) {
 }
 
 func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, error) {
-	u := model.NewProfile().
-		WithFirstName(req.FirstName).
-		WithLastName(req.LastName)
+	u := New().WithFirstName(req.FirstName).WithLastName(req.LastName)
 
 	created, err := s.repo.Create(ctx, u)
 	if err != nil {
@@ -59,10 +56,7 @@ func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, erro
 }
 
 func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, error) {
-	u := model.NewProfile().
-		WithId(req.Id).
-		WithFirstName(req.FirstName).
-		WithLastName(req.LastName)
+	u := New().WithId(req.Id).WithFirstName(req.FirstName).WithLastName(req.LastName)
 
 	updated, err := s.repo.Update(ctx, u)
 	if err != nil {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	svc "tldw/internal/services/account"
+	model "tldw/internal/account"
 )
 
 type LoginRequestMapper struct{}
@@ -13,11 +13,11 @@ func NewLoginRequestMapper() LoginRequestMapper {
 	return LoginRequestMapper{}
 }
 
-func (m LoginRequestMapper) Map(r *http.Request) (svc.LoginRequest, error) {
-	req := new(svc.LoginRequest)
+func (m LoginRequestMapper) Map(r *http.Request) (model.LoginRequest, error) {
+	req := new(model.LoginRequest)
 	err := json.NewDecoder(r.Body).Decode(req)
 	if err != nil {
-		return svc.LoginRequest{}, err
+		return model.LoginRequest{}, err
 	}
 
 	return *req, nil
@@ -29,7 +29,7 @@ func NewLoginResponseMapper() LoginResponseMapper {
 	return LoginResponseMapper{}
 }
 
-func (m LoginResponseMapper) Map(w http.ResponseWriter, out *svc.LoginResponse) error {
+func (m LoginResponseMapper) Map(w http.ResponseWriter, out *model.LoginResponse) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	return json.NewEncoder(w).Encode(out)

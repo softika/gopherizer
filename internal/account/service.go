@@ -1,4 +1,4 @@
-//go:generate mockgen -source=account.go -destination=./mock/account.go -package=mock
+//go:generate mockgen -source=service.go -destination=./mock/service.go -package=mock
 package account
 
 import (
@@ -13,13 +13,12 @@ import (
 	"github.com/softika/slogging"
 
 	"tldw/config"
-	"tldw/internal/model"
 	"tldw/pkg/errorx"
 )
 
 type Repository interface {
-	Create(ctx context.Context, account *model.Account) (*model.Account, error)
-	GetByEmail(ctx context.Context, email string) (*model.Identity, error)
+	Create(ctx context.Context, a *Account) (*Account, error)
+	GetByEmail(ctx context.Context, email string) (*Identity, error)
 	ChangePassword(ctx context.Context, id string, oldPassword string, newPassword string) error
 }
 
@@ -83,9 +82,7 @@ func (s Service) Register(ctx context.Context, req RegisterRequest) (*RegisterRe
 		)
 	}
 
-	a := model.NewAccount().
-		WithEmail(req.Email).
-		WithPassword(string(hashPwd))
+	a := New().WithEmail(req.Email).WithPassword(string(hashPwd))
 
 	created, err := s.repo.Create(ctx, a)
 	if err != nil {

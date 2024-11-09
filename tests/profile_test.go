@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-
-	userSvc "tldw/internal/services/profile"
+	userSvc "tldw/internal/profile"
 )
 
 func (s *E2ETestSuite) TestCreateProfileHandler() {

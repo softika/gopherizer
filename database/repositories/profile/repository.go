@@ -6,7 +6,7 @@ import (
 
 	"tldw/database"
 	"tldw/database/repositories"
-	"tldw/internal/model"
+	"tldw/internal/profile"
 )
 
 var (
@@ -32,8 +32,8 @@ func NewRepository(dbService database.Service) Repository {
 	}
 }
 
-func (r Repository) GetById(ctx context.Context, id string) (*model.Profile, error) {
-	p := new(model.Profile)
+func (r Repository) GetById(ctx context.Context, id string) (*profile.Profile, error) {
+	p := new(profile.Profile)
 	if err := r.db.Pool().QueryRow(ctx, getByIdSql, id).Scan(
 		&p.Id,
 		&p.AccountId,
@@ -48,7 +48,7 @@ func (r Repository) GetById(ctx context.Context, id string) (*model.Profile, err
 	return p, nil
 }
 
-func (r Repository) Create(ctx context.Context, p *model.Profile) (*model.Profile, error) {
+func (r Repository) Create(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	if err := r.db.Pool().QueryRow(ctx, createSql,
 		p.AccountId, // $1
 		p.FirstName, // $2
@@ -60,7 +60,7 @@ func (r Repository) Create(ctx context.Context, p *model.Profile) (*model.Profil
 	return p, nil
 }
 
-func (r Repository) Update(ctx context.Context, p *model.Profile) (*model.Profile, error) {
+func (r Repository) Update(ctx context.Context, p *profile.Profile) (*profile.Profile, error) {
 	if err := r.db.Pool().QueryRow(ctx, updateSql,
 		p.FirstName, // $1
 		p.LastName,  // $2

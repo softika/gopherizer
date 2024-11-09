@@ -11,7 +11,8 @@ import (
 
 	"tldw/database"
 	"tldw/database/repositories"
-	"tldw/internal/model"
+	"tldw/internal/account"
+	"tldw/internal/role"
 	"tldw/pkg/errorx"
 )
 
@@ -40,7 +41,7 @@ func NewRepository(dbService database.Service) Repository {
 	}
 }
 
-func (r Repository) Create(ctx context.Context, acc *model.Account) (*model.Account, error) {
+func (r Repository) Create(ctx context.Context, acc *account.Account) (*account.Account, error) {
 	if err := r.db.Pool().QueryRow(ctx, createSql,
 		acc.Email,    // $1
 		acc.Password, // $2
@@ -57,11 +58,11 @@ func (r Repository) Create(ctx context.Context, acc *model.Account) (*model.Acco
 	return acc, nil
 }
 
-func (r Repository) GetByEmail(ctx context.Context, email string) (*model.Identity, error) {
-	identity := new(model.Identity)
+func (r Repository) GetByEmail(ctx context.Context, email string) (*account.Identity, error) {
+	identity := new(account.Identity)
 
 	if err := r.Execute(ctx, func(tx pgx.Tx) error {
-		acc := new(model.Account)
+		acc := new(account.Account)
 		if err := tx.QueryRow(ctx, getByEmailSql, email).Scan(
 			&acc.Id,
 			&acc.Email,
@@ -83,11 +84,11 @@ func (r Repository) GetByEmail(ctx context.Context, email string) (*model.Identi
 		defer rows.Close()
 
 		for rows.Next() {
-			var role model.Role
-			if err = rows.Scan(&role.Name); err != nil {
+			var rl role.Role
+			if err = rows.Scan(&rl.Name); err != nil {
 				return fmt.Errorf("failed to scan roles: %w", err)
 			}
-			roles = append(roles, role.Name)
+			roles = append(roles, rl.Name)
 		}
 
 		identity.AccountId = acc.Id
@@ -131,8 +132,8 @@ func (r Repository) ChangePassword(ctx context.Context, id string, oldPassword s
 	})
 }
 
-func (r Repository) lockById(ctx context.Context, tx pgx.Tx, id string) (*model.Account, error) {
-	a := new(model.Account)
+func (r Repository) lockById(ctx context.Context, tx pgx.Tx, id string) (*account.Account, error) {
+	a := new(account.Account)
 
 	row, err := tx.Query(ctx, lockByIdSql, id)
 	if err != nil {

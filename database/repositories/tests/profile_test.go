@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"tldw/database/repositories/profile"
-	"tldw/internal/model"
+	model "tldw/internal/profile"
 )
 
 func (s *RepositoriesTestSuite) TestProfileRepository_Create() {
@@ -19,11 +19,10 @@ func (s *RepositoriesTestSuite) TestProfileRepository_Create() {
 	}{
 		{
 			name: "valid profile",
-			input: &model.Profile{
-				AccountId: "2f6f112a-a8e2-42c3-a6b0-c15e86d01704",
-				FirstName: "Milan",
-				LastName:  "Miami",
-			},
+			input: model.New().
+				WithAccountId("2f6f112a-a8e2-42c3-a6b0-c15e86d01704").
+				WithFirstName("Milan").
+				WithLastName("Miami"),
 			wantErr: assert.NoError,
 		},
 		{
@@ -111,24 +110,18 @@ func (s *RepositoriesTestSuite) TestProfileRepository_Update() {
 	}{
 		{
 			name: "valid profile",
-			input: &model.Profile{
-				Base: model.Base{
-					Id: "0dd35f9a-0d20-41f1-80c2-d7993e313fb4",
-				},
-				FirstName: "Lanmi",
-				LastName:  "Miami",
-			},
+			input: model.New().
+				WithId("0dd35f9a-0d20-41f1-80c2-d7993e313fb4").
+				WithFirstName("Lanmi").
+				WithLastName("Miami"),
 			wantErr: assert.NoError,
 		},
 		{
 			name: "invalid id",
-			input: &model.Profile{
-				Base: model.Base{
-					Id: "invalid-id",
-				},
-				FirstName: "John",
-				LastName:  "Doe",
-			},
+			input: model.New().
+				WithId("invalid-id").
+				WithFirstName("John").
+				WithLastName("Doe"),
 			wantErr: assert.Error,
 		},
 	}

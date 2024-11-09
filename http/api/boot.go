@@ -6,12 +6,12 @@ import (
 	"tldw/config"
 	"tldw/database"
 
+	"tldw/internal/account"
+	"tldw/internal/health"
+	"tldw/internal/profile"
+
 	repoAccount "tldw/database/repositories/account"
 	repoProfile "tldw/database/repositories/profile"
-
-	svcAccount "tldw/internal/services/account"
-	svcHealth "tldw/internal/services/health"
-	svcProfile "tldw/internal/services/profile"
 
 	mapAccount "tldw/http/api/account"
 	mapHealth "tldw/http/api/health"
@@ -20,8 +20,8 @@ import (
 
 type repositories struct {
 	db      database.Service
-	account svcAccount.Repository
-	profile svcProfile.Repository
+	account account.Repository
+	profile profile.Repository
 }
 
 func (r *Router) initRepositories(cfg config.DatabaseConfig) repositories {
@@ -34,29 +34,29 @@ func (r *Router) initRepositories(cfg config.DatabaseConfig) repositories {
 }
 
 type services struct {
-	account svcAccount.Service
-	health  svcHealth.Service
-	profile svcProfile.Service
+	account account.Service
+	health  health.Service
+	profile profile.Service
 }
 
 func (r *Router) initServices(cfg config.AuthConfig, s repositories) services {
 	return services{
-		account: svcAccount.NewService(cfg, s.account),
-		health:  svcHealth.NewService(s.db),
-		profile: svcProfile.NewService(s.profile),
+		account: account.NewService(cfg, s.account),
+		health:  health.NewService(s.db),
+		profile: profile.NewService(s.profile),
 	}
 }
 
 type handlers struct {
-	health Handler[svcHealth.Request, *svcHealth.Response]
+	health Handler[health.Request, *health.Response]
 
-	accountRegister       Handler[svcAccount.RegisterRequest, *svcAccount.RegisterResponse]
-	accountLogin          Handler[svcAccount.LoginRequest, *svcAccount.LoginResponse]
-	accountChangePassword Handler[svcAccount.ChangePasswordRequest, *svcAccount.ChangePasswordResponse]
+	accountRegister       Handler[account.RegisterRequest, *account.RegisterResponse]
+	accountLogin          Handler[account.LoginRequest, *account.LoginResponse]
+	accountChangePassword Handler[account.ChangePasswordRequest, *account.ChangePasswordResponse]
 
-	profileCreate Handler[svcProfile.CreateRequest, *svcProfile.Response]
-	profileGet    Handler[string, *svcProfile.Response]
-	profileUpdate Handler[svcProfile.UpdateRequest, *svcProfile.Response]
+	profileCreate Handler[profile.CreateRequest, *profile.Response]
+	profileGet    Handler[string, *profile.Response]
+	profileUpdate Handler[profile.UpdateRequest, *profile.Response]
 	profileDelete Handler[string, bool]
 }
 

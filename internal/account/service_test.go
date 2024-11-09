@@ -1,4 +1,4 @@
-package account
+package account_test
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"tldw/config"
-	"tldw/internal/model"
-	"tldw/internal/services/account/mock"
+	"tldw/internal/account"
+	"tldw/internal/account/mock"
 )
 
 func TestService_Login(t *testing.T) {
@@ -26,18 +26,18 @@ func TestService_Login(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     LoginRequest
+		req     account.LoginRequest
 		mockFn  func(m *mock.MockRepository)
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "Success",
-			req: LoginRequest{
+			req: account.LoginRequest{
 				Email:    "user@fake.com",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&model.Identity{
+				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&account.Identity{
 					Email:    "user@fake.com",
 					Password: "$2a$10$.2/hbR6YIEfp4a7zvZ7xpO0fUUySsjM6.wgH0aWuqFN/sJPR5uEFq",
 				}, nil)
@@ -46,12 +46,12 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Invalid credentials",
-			req: LoginRequest{
+			req: account.LoginRequest{
 				Email:    "user@fake.com",
 				Password: "invalid",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&model.Identity{
+				m.EXPECT().GetByEmail(ctx, "user@fake.com").Return(&account.Identity{
 					Email:    "user@fake.com",
 					Password: "$2a$10$.2/hbR6YIEfp4a7zvZ7xpO0fUUySsjM6.wgH0aWuqFN/sJPR5uEFq",
 				}, nil)
@@ -60,7 +60,7 @@ func TestService_Login(t *testing.T) {
 		},
 		{
 			name: "Invalid Email",
-			req: LoginRequest{
+			req: account.LoginRequest{
 				Email:    "invalid",
 				Password: "password",
 			},
@@ -76,7 +76,7 @@ func TestService_Login(t *testing.T) {
 			t.Parallel()
 
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(cfg, repo)
+			s := account.NewService(cfg, repo)
 
 			tt.mockFn(repo)
 
@@ -105,18 +105,18 @@ func TestService_Register(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     RegisterRequest
+		req     account.RegisterRequest
 		mockFn  func(m *mock.MockRepository)
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "Success",
-			req: RegisterRequest{
+			req: account.RegisterRequest{
 				Email:    "user@fake.com",
 				Password: "password",
 			},
 			mockFn: func(m *mock.MockRepository) {
-				got := model.NewAccount().
+				got := account.New().
 					WithId("1").
 					WithEmail("user@fake.com").
 					WithPassword("$2a$10$DMu6hB30jb9SfUiNszbkzufXqeCgFFJPbMQeY5VpYNcYbWC.ZUB6a")
@@ -127,7 +127,7 @@ func TestService_Register(t *testing.T) {
 		},
 		{
 			name: "Failed",
-			req: RegisterRequest{
+			req: account.RegisterRequest{
 				Email:    "user@fake.com",
 				Password: "password",
 			},
@@ -144,7 +144,7 @@ func TestService_Register(t *testing.T) {
 			t.Parallel()
 
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(cfg, repo)
+			s := account.NewService(cfg, repo)
 
 			tt.mockFn(repo)
 
@@ -173,13 +173,13 @@ func TestService_ChangePassword(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		req     ChangePasswordRequest
+		req     account.ChangePasswordRequest
 		mockFn  func(m *mock.MockRepository)
 		wantErr assert.ErrorAssertionFunc
 	}{
 		{
 			name: "Success",
-			req: ChangePasswordRequest{
+			req: account.ChangePasswordRequest{
 				AccountId:   "1",
 				OldPassword: "password",
 				NewPassword: "newpassword",
@@ -193,7 +193,7 @@ func TestService_ChangePassword(t *testing.T) {
 		},
 		{
 			name: "Failed",
-			req: ChangePasswordRequest{
+			req: account.ChangePasswordRequest{
 				AccountId:   "1",
 				OldPassword: "password",
 				NewPassword: "newpassword",
@@ -213,7 +213,7 @@ func TestService_ChangePassword(t *testing.T) {
 			t.Parallel()
 
 			repo := mock.NewMockRepository(ctrl)
-			s := NewService(cfg, repo)
+			s := account.NewService(cfg, repo)
 
 			tt.mockFn(repo)
 

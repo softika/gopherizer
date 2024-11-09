@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"tldw/database/repositories/account"
-	"tldw/internal/model"
+	model "tldw/internal/account"
 )
 
 func (s *RepositoriesTestSuite) TestAccountRepository_Create() {
