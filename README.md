@@ -1,9 +1,23 @@
 ![go workflow](https://github.com/softika/gopherizer/actions/workflows/test.yml/badge.svg)
 ![lint workflow](https://github.com/softika/gopherizer/actions/workflows/lint.yml/badge.svg)
 
-# Project gopherizer
+# Gopherizer
 
-This is a golang template repository. A good place to start your project.
+This is a Go template repository, providing a solid foundation for starting new projects.
+
+## Features
+- [x] HTTP Server
+- [x] JWT Authentication
+- [x] Database Service
+- [x] Migrations
+- [x] Configuration
+- [x] Logging
+- [x] Error Handling
+- [x] Testing
+- [x] CI Pipeline (Github Actions)
+- [ ] OpenAPI Documentation
+- [ ] Google Auth
+
 
 ## Project Structure
 
@@ -20,26 +34,24 @@ Top Level Directories
 
 ### Environment Config
 
-All required environment variables to run this service is defined on `config/default.config`.
-When you run `make run`, it will check if `config/config` exists and will create it from
-`config/default.config` if it does not exist.
+All required environment variables for running this service are defined in `config/default.config`. 
+When you run `make run`, it checks for `config/config` and will create it from `config/default.config` 
+if it doesn't already exist.
 
-The value on this file can be overridden by setting the equivalent environment variable.
-For example, to change the:
+Values in this file can be overridden by setting the corresponding environment variables. For example:
 
-- `environment` value you can set `ENVIRONMENT`
-- `http.host` value you can set `HTTP_HOST`
-  on your machine to match your desired value.
+- Set `ENVIRONMENT` to change the `environment` value
+- Set `HTTP_HOST` to adjust the `http.host` value to your desired setting
 
-You may also use [direnv](https://direnv.net/) to define environment variable on a workspace basis.
+Additionally, you can use [direnv](https://direnv.net/) to define environment variables on a per-workspace basis.
 
 #### Environment Struct
 
-Environment Struct is split into sections for easier readability and passing of configs to downstream services. For
-example, the database service would only require the `DatabaseConfig` instead of the full config object.
+The `Environment` struct is organized into sections to improve readability and make it easier to pass specific configurations to downstream services. 
+For instance, the database service only needs `DatabaseConfig` rather than the entire configuration object.
 
-The structure all belongs in `Config` which holds all the configs used in the service. Individual configs are defined
-inside `Config` as a struct. This allows for individually passing structs of a specific config to downstream services.
+All configuration sections are contained within the `Config` struct, which holds every configuration used in the service. 
+Each individual configuration is defined as a struct within `Config`, enabling selective passing of specific configurations to downstream services.
 
 example:
 
@@ -87,8 +99,9 @@ func New(cfg config.DatabaseConfig) Service {
 ```
 ##### AppConfig
 
-AppConfig is basic config of the application such as the name, environment and version. These are usually used for
-observability such that we can discern the versions of the service and the environment it is running in.
+AppConfig provides essential application settings, including the name, environment, and version. 
+These settings are typically used for observability, 
+allowing us to identify the service version and the environment in which it is running.
 
 ### Adding new migration file
 
@@ -104,11 +117,8 @@ goose -dir database/migrations create xxx sql
 
 We use [gomock](https://github.com/uber-go/mock) to generate mocks.
 
-If you change the interface and need to create/update the generated mock, make
-sure to always run this command.
-
+If you change the interface make sure to always run this command:
 ```sh
-# note that PWD should be the root package of the source generation files.
 make mocks
 ```
 
@@ -118,7 +128,7 @@ To run the tests locally, run `make test` to run all the unit tests
 or run `go ./... -run <test-name>` to run specific unit test.
 
 By default `make test` will run the tests in parallel n-times.
-You can also do this manually by running `go test ./... -parallel -count=5`
+You can also do this manually by running: `go test ./... -parallel -count=5`
 
 
 ## MakeFile
