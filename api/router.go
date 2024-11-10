@@ -3,10 +3,11 @@ package api
 import (
 	"errors"
 	"net/http"
-	"tldw/config"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+
+	"tldw/config"
 )
 
 type Router struct {

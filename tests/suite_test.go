@@ -1,17 +1,17 @@
 package tests
 
 import (
-	"github.com/pressly/goose/v3"
 	"testing"
-	"tldw/config"
 
+	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/softika/slogging"
 
+	"tldw/api"
+	"tldw/config"
 	"tldw/database"
-	"tldw/http/api"
-	"tldw/testinfra"
+	"tldw/pkg/testinfra"
 )
 
 type E2ETestSuite struct {

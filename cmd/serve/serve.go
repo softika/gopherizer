@@ -10,9 +10,9 @@ import (
 
 	"github.com/softika/slogging"
 
+	"tldw/api"
 	"tldw/config"
-	"tldw/http/api"
-	"tldw/http/server"
+	"tldw/server"
 )
 
 func Run() {

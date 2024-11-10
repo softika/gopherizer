@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"tldw/config"
-	"tldw/testinfra"
+	"tldw/pkg/testinfra"
 )
 
 var dbCfg config.DatabaseConfig

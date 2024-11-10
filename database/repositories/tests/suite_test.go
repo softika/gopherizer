@@ -9,7 +9,7 @@ import (
 	"github.com/softika/slogging"
 
 	"tldw/database"
-	"tldw/testinfra"
+	"tldw/pkg/testinfra"
 )
 
 type RepositoriesTestSuite struct {

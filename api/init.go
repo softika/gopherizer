@@ -6,16 +6,19 @@ import (
 	"tldw/config"
 	"tldw/database"
 
+	// internal
 	"tldw/internal/account"
 	"tldw/internal/health"
 	"tldw/internal/profile"
 
+	// api
+	mapAccount "tldw/api/account"
+	mapHealth "tldw/api/health"
+	mapProfile "tldw/api/profile"
+
+	// repo
 	repoAccount "tldw/database/repositories/account"
 	repoProfile "tldw/database/repositories/profile"
-
-	mapAccount "tldw/http/api/account"
-	mapHealth "tldw/http/api/health"
-	mapProfile "tldw/http/api/profile"
 )
 
 type repositories struct {

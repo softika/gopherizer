@@ -3,12 +3,12 @@ package tests
 import (
 	"net/http"
 	"net/http/httptest"
-	healthSvc "tldw/internal/health"
 
 	"github.com/go-playground/validator/v10"
 
-	"tldw/http/api"
-	healthApi "tldw/http/api/health"
+	"tldw/api"
+	healthApi "tldw/api/health"
+	healthSvc "tldw/internal/health"
 )
 
 func (s *E2ETestSuite) TestHealthEndpoint() {
