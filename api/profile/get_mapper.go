@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	model "tldw/internal/profile"
+	model "github.com/softika/gopherizer/internal/profile"
 )
 
 type GetByIdRequestMapper struct{}

@@ -7,8 +7,8 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/internal"
-	"tldw/pkg/errorx"
+	"github.com/softika/gopherizer/internal"
+	"github.com/softika/gopherizer/pkg/errorx"
 )
 
 type Repository interface {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"tldw/config"
+	"github.com/softika/gopherizer/config"
 )
 
 type Server struct {

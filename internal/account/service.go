@@ -12,8 +12,8 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/config"
-	"tldw/pkg/errorx"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/pkg/errorx"
 )
 
 type Repository interface {

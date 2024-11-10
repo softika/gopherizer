@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	model "tldw/internal/profile"
+	model "github.com/softika/gopherizer/internal/profile"
 )
 
 type CreateRequestMapper struct{}

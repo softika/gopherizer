@@ -6,7 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"tldw/database"
+	"github.com/softika/gopherizer/database"
 )
 
 // TxManager defines a method to execute a transaction from Begin until Commit or Rollback.

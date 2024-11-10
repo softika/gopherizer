@@ -4,9 +4,9 @@ import (
 	"context"
 	_ "embed"
 
-	"tldw/database"
-	"tldw/database/repositories"
-	"tldw/internal/profile"
+	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/database/repositories"
+	"github.com/softika/gopherizer/internal/profile"
 )
 
 var (

@@ -9,11 +9,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"tldw/database"
-	"tldw/database/repositories"
-	"tldw/internal/account"
-	"tldw/internal/role"
-	"tldw/pkg/errorx"
+	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/database/repositories"
+	"github.com/softika/gopherizer/internal/account"
+	"github.com/softika/gopherizer/internal/role"
+	"github.com/softika/gopherizer/pkg/errorx"
 )
 
 var (

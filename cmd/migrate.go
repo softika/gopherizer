@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"tldw/cmd/migrate"
+	"github.com/softika/gopherizer/cmd/migrate"
 )
 
 func init() {

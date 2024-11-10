@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"tldw/pkg/errorx"
+	"github.com/softika/gopherizer/pkg/errorx"
 )
 
 type Error struct {

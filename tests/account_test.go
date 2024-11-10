@@ -6,18 +6,19 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	account2 "tldw/internal/account"
+
+	"github.com/softika/gopherizer/internal/account"
 )
 
 func (s *E2ETestSuite) TestRegisterAccount() {
 	tests := []struct {
 		name     string
-		input    account2.RegisterRequest
+		input    account.RegisterRequest
 		wantCode int
 	}{
 		{
 			name: "valid request",
-			input: account2.RegisterRequest{
+			input: account.RegisterRequest{
 				Email:    "account1@test.com",
 				Password: "Password1234!",
 			},
@@ -25,7 +26,7 @@ func (s *E2ETestSuite) TestRegisterAccount() {
 		},
 		{
 			name: "invalid email",
-			input: account2.RegisterRequest{
+			input: account.RegisterRequest{
 				Email:    "account1",
 				Password: "Password1234!",
 			},
@@ -33,7 +34,7 @@ func (s *E2ETestSuite) TestRegisterAccount() {
 		},
 		{
 			name: "invalid password",
-			input: account2.RegisterRequest{
+			input: account.RegisterRequest{
 				Email:    "account1@test.com",
 				Password: "Pass", // too short
 			},
@@ -41,7 +42,7 @@ func (s *E2ETestSuite) TestRegisterAccount() {
 		},
 		{
 			name:     "empty request",
-			input:    account2.RegisterRequest{},
+			input:    account.RegisterRequest{},
 			wantCode: http.StatusBadRequest,
 		},
 	}
@@ -65,7 +66,7 @@ func (s *E2ETestSuite) TestRegisterAccount() {
 				return
 			}
 
-			var resp account2.RegisterResponse
+			var resp account.RegisterResponse
 			err = json.NewDecoder(w.Body).Decode(&resp)
 			s.NoError(err)
 
@@ -77,12 +78,12 @@ func (s *E2ETestSuite) TestRegisterAccount() {
 func (s *E2ETestSuite) TestLoginAccount() {
 	tests := []struct {
 		name     string
-		input    account2.LoginRequest
+		input    account.LoginRequest
 		wantCode int
 	}{
 		{
 			name: "valid request",
-			input: account2.LoginRequest{
+			input: account.LoginRequest{
 				Email:    "john@mail.com",
 				Password: "password",
 			},
@@ -90,7 +91,7 @@ func (s *E2ETestSuite) TestLoginAccount() {
 		},
 		{
 			name: "invalid email",
-			input: account2.LoginRequest{
+			input: account.LoginRequest{
 				Email:    "john",
 				Password: "password",
 			},
@@ -98,7 +99,7 @@ func (s *E2ETestSuite) TestLoginAccount() {
 		},
 		{
 			name: "invalid password",
-			input: account2.LoginRequest{
+			input: account.LoginRequest{
 				Email:    "john@mail.com",
 				Password: "invalid",
 			},
@@ -106,7 +107,7 @@ func (s *E2ETestSuite) TestLoginAccount() {
 		},
 		{
 			name:     "empty request",
-			input:    account2.LoginRequest{},
+			input:    account.LoginRequest{},
 			wantCode: http.StatusBadRequest,
 		},
 	}
@@ -130,7 +131,7 @@ func (s *E2ETestSuite) TestLoginAccount() {
 				return
 			}
 
-			var resp account2.LoginResponse
+			var resp account.LoginResponse
 			err = json.NewDecoder(w.Body).Decode(&resp)
 			s.NoError(err)
 

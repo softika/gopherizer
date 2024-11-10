@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"tldw/internal/health"
+	"github.com/softika/gopherizer/internal/health"
 )
 
 type RequestMapper struct{}

@@ -8,10 +8,10 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/api"
-	"tldw/config"
-	"tldw/database"
-	"tldw/pkg/testinfra"
+	"github.com/softika/gopherizer/api"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/pkg/testinfra"
 )
 
 type E2ETestSuite struct {

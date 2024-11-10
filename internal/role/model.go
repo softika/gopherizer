@@ -1,6 +1,6 @@
 package role
 
-import "tldw/internal"
+import "github.com/softika/gopherizer/internal"
 
 type Role struct {
 	internal.Base

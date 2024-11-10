@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"tldw/api"
-	healthApi "tldw/api/health"
-	healthSvc "tldw/internal/health"
+	"github.com/softika/gopherizer/api"
+	healthApi "github.com/softika/gopherizer/api/health"
+	healthSvc "github.com/softika/gopherizer/internal/health"
 )
 
 func (s *E2ETestSuite) TestHealthEndpoint() {

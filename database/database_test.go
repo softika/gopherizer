@@ -5,8 +5,8 @@ import (
 	"log"
 	"testing"
 
-	"tldw/config"
-	"tldw/pkg/testinfra"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/pkg/testinfra"
 )
 
 var dbCfg config.DatabaseConfig

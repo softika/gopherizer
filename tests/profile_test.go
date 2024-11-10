@@ -3,9 +3,9 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
+	userSvc "github.com/softika/gopherizer/internal/profile"
 	"net/http"
 	"net/http/httptest"
-	userSvc "tldw/internal/profile"
 )
 
 func (s *E2ETestSuite) TestCreateProfileHandler() {

@@ -10,9 +10,9 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/api"
-	"tldw/config"
-	"tldw/server"
+	"github.com/softika/gopherizer/api"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/server"
 )
 
 func Run() {

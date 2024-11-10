@@ -11,8 +11,8 @@ package mock
 
 import (
 	context "context"
+	account "github.com/softika/gopherizer/internal/account"
 	reflect "reflect"
-	account "tldw/internal/account"
 
 	gomock "go.uber.org/mock/gomock"
 )

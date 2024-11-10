@@ -1,6 +1,6 @@
 package account
 
-import "tldw/internal"
+import "github.com/softika/gopherizer/internal"
 
 type Account struct {
 	internal.Base

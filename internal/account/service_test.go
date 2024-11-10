@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"tldw/config"
-	"tldw/internal/account"
-	"tldw/internal/account/mock"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/internal/account"
+	"github.com/softika/gopherizer/internal/account/mock"
 )
 
 func TestService_Login(t *testing.T) {

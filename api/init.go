@@ -3,22 +3,22 @@ package api
 import (
 	"github.com/go-playground/validator/v10"
 
-	"tldw/config"
-	"tldw/database"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/database"
 
 	// internal
-	"tldw/internal/account"
-	"tldw/internal/health"
-	"tldw/internal/profile"
+	"github.com/softika/gopherizer/internal/account"
+	"github.com/softika/gopherizer/internal/health"
+	"github.com/softika/gopherizer/internal/profile"
 
 	// api
-	mapAccount "tldw/api/account"
-	mapHealth "tldw/api/health"
-	mapProfile "tldw/api/profile"
+	mapAccount "github.com/softika/gopherizer/api/account"
+	mapHealth "github.com/softika/gopherizer/api/health"
+	mapProfile "github.com/softika/gopherizer/api/profile"
 
 	// repo
-	repoAccount "tldw/database/repositories/account"
-	repoProfile "tldw/database/repositories/profile"
+	repoAccount "github.com/softika/gopherizer/database/repositories/account"
+	repoProfile "github.com/softika/gopherizer/database/repositories/profile"
 )
 
 type repositories struct {

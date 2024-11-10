@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	model "tldw/internal/account"
+	model "github.com/softika/gopherizer/internal/account"
 )
 
 type RegisterRequestMapper struct{}

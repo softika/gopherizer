@@ -14,7 +14,7 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/config"
+	"github.com/softika/gopherizer/config"
 )
 
 //go:embed migrations/*.sql

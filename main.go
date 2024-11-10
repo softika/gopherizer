@@ -1,6 +1,6 @@
 package main
 
-import "tldw/cmd"
+import "github.com/softika/gopherizer/cmd"
 
 func main() {
 	cmd.Execute()

@@ -7,9 +7,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "tldw",
-	Short: "tl;dw",
-	Long:  `To Long; Didn't Watch`,
+	Use:   "gopherizer",
+	Short: "gopherizer",
+	Long:  `A golang template`,
 }
 
 func Execute() {

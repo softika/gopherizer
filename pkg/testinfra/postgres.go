@@ -9,7 +9,7 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/config"
+	"github.com/softika/gopherizer/config"
 )
 
 const (

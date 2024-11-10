@@ -1,9 +1,9 @@
-![go workflow](https://github.com/softika/tldw/actions/workflows/test.yml/badge.svg)
-![lint workflow](https://github.com/softika/tldw/actions/workflows/lint.yml/badge.svg)
+![go workflow](https://github.com/softika/gopherizer/actions/workflows/test.yml/badge.svg)
+![lint workflow](https://github.com/softika/gopherizer/actions/workflows/lint.yml/badge.svg)
 
-# Project tldw
+# Project gopherizer
 
-One Paragraph of project description goes here
+This is a golang template repository. A good place to start your project.
 
 ## Getting Started
 
@@ -75,7 +75,7 @@ import (
     "github.com/jackc/pgx/v5/pgxpool"
     "github.com/jackc/pgx/v5/stdlib"
 	
-    "tldw/config"
+    "github.com/softika/gopherizer/config"
 )
 
 type Service struct {

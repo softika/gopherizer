@@ -1,6 +1,6 @@
 package profile
 
-import "tldw/internal"
+import "github.com/softika/gopherizer/internal"
 
 type Profile struct {
 	internal.Base

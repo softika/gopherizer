@@ -1,15 +1,15 @@
 services:
   database:
-    container_name: tldw-postgres
+    container_name: gopherizer-postgres
     image: postgres:latest
     environment:
-      POSTGRES_DB: tldw
+      POSTGRES_DB: gopherizer
       POSTGRES_USER: dbadmin
       POSTGRES_PASSWORD: dbadmin
     ports:
       - "5432:5432"
     volumes:
-      - tldw_volume:/var/lib/postgresql/data
+      - gopherizer_volume:/var/lib/postgresql/data
 
 volumes:
-  tldw_volume:
+  gopherizer_volume:

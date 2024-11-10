@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 
-	"tldw/internal/profile"
-	"tldw/internal/profile/mock"
+	"github.com/softika/gopherizer/internal/profile"
+	"github.com/softika/gopherizer/internal/profile/mock"
 )
 
 func TestService_Create(t *testing.T) {

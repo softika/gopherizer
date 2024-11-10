@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"tldw/database/repositories/profile"
-	model "tldw/internal/profile"
+	"github.com/softika/gopherizer/database/repositories/profile"
+	model "github.com/softika/gopherizer/internal/profile"
 )
 
 func (s *RepositoriesTestSuite) TestProfileRepository_Create() {

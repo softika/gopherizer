@@ -1,4 +1,4 @@
-module tldw
+module github.com/softika/gopherizer
 
 go 1.23.2
 

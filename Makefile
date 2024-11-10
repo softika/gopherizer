@@ -1,5 +1,5 @@
 # project name
-PROJECT_NAME = TLDW
+PROJECT_NAME = gopherizer
 
 .PHONY: build
 build:

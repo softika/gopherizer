@@ -5,8 +5,8 @@ import (
 
 	"github.com/softika/slogging"
 
-	"tldw/config"
-	"tldw/database"
+	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/database"
 )
 
 var UpCmd = &cobra.Command{
