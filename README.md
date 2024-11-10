@@ -5,38 +5,18 @@
 
 This is a golang template repository. A good place to start your project.
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
 ## Project Structure
 
 Top Level Directories
 
+- [api/](api) - http handlers and routes.
 - [cmd/](cmd) - cli commands like `migrate` and `server`.
 - [config/](config) - configuration and loading environment variables.
 - [database/](database) - database service, repositories and migration files.
-- [http/](http) - deals with transport layer, input sanitation and consumes `internal/services` layer.
 - [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities.
-- [logging/](logging) - structural logging service.
-- [testinfra/](testinfra) - test-containers utilities.
+- [pkg/](pkg) - reusable packages.
+- [server/](server) - http server.
 - [tests/](tests) - e2e tests.
-
-### http
-`http` folder deals with the transport protocol and typically input sanitation.
-For example, there could be:
-- `http/api` for a REST API implementation
-- `http/grpc` for a gRPC server implementation
-- `http/server` for running the server
-
-Ideally they all should only consume `internal/services` layer and do not deal
-with business logic directly.
-
-### internal
-`internal` contains all reusable business logic that can be consumed by `http` or `eventing` layers.
-It is divided into:
-- `services` - represents business logic use cases.
-- `model` - performs business logic and deals directly with `storage` layer and/or `integrations` clients.
 
 ### Environment Config
 
@@ -139,7 +119,6 @@ or run `go ./... -run <test-name>` to run specific unit test.
 
 By default `make test` will run the tests in parallel n-times.
 You can also do this manually by running `go test ./... -parallel -count=5`
-
 
 
 ## MakeFile
