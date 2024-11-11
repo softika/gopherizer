@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -12,8 +12,8 @@ type Server struct {
 	http *http.Server
 }
 
-// New creates a new Server.
-func New(cfg config.HTTPConfig) *Server {
+// NewServer creates a new Server.
+func NewServer(cfg config.HTTPConfig) *Server {
 	return &Server{cfg: cfg}
 }
 

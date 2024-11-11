@@ -3,26 +3,9 @@ package tests
 import (
 	"net/http"
 	"net/http/httptest"
-
-	"github.com/go-playground/validator/v10"
-
-	"github.com/softika/gopherizer/api"
-	healthApi "github.com/softika/gopherizer/api/health"
-	healthSvc "github.com/softika/gopherizer/internal/health"
 )
 
 func (s *E2ETestSuite) TestHealthEndpoint() {
-	svc := healthSvc.NewService(s.dbService)
-
-	handler := api.NewHandler(
-		healthApi.NewRequestMapper(),
-		healthApi.NewResponseMapper(),
-		svc.Check,
-		validator.New(),
-	)
-
-	handler.Route(s.router, http.MethodGet, "/health")
-
 	testCases := []struct {
 		name     string
 		wantCode int

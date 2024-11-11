@@ -6,17 +6,15 @@ import (
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
 
-	// internal
+	// core services
 	"github.com/softika/gopherizer/internal/account"
 	"github.com/softika/gopherizer/internal/health"
 	"github.com/softika/gopherizer/internal/profile"
 
-	// api
-	mapAccount "github.com/softika/gopherizer/api/account"
-	mapHealth "github.com/softika/gopherizer/api/health"
-	mapProfile "github.com/softika/gopherizer/api/profile"
+	// http handler mappers
+	"github.com/softika/gopherizer/api/mappers"
 
-	// repo
+	// repositories
 	repoAccount "github.com/softika/gopherizer/database/repositories/account"
 	repoProfile "github.com/softika/gopherizer/database/repositories/profile"
 )
@@ -53,8 +51,8 @@ func (r *Router) initServices(cfg config.AuthConfig, s repositories) services {
 type handlers struct {
 	health Handler[health.Request, *health.Response]
 
-	accountRegister       Handler[account.RegisterRequest, *account.RegisterResponse]
 	accountLogin          Handler[account.LoginRequest, *account.LoginResponse]
+	accountRegister       Handler[account.RegisterRequest, *account.RegisterResponse]
 	accountChangePassword Handler[account.ChangePasswordRequest, *account.ChangePasswordResponse]
 
 	profileCreate Handler[profile.CreateRequest, *profile.Response]
@@ -67,57 +65,57 @@ func (r *Router) initHandlers(s services) handlers {
 	vld := validator.New()
 
 	healthHandler := NewHandler(
-		mapHealth.NewRequestMapper(),
-		mapHealth.NewResponseMapper(),
+		mappers.HealthRequest{},
+		mappers.HealthResponse{},
 		s.health.Check,
 		vld,
 	)
 
-	accountRegisterHandler := NewHandler(
-		mapAccount.NewRegisterRequestMapper(),
-		mapAccount.NewRegisterResponseMapper(),
-		s.account.Register,
-		vld,
-	)
-
 	accountLoginHandler := NewHandler(
-		mapAccount.NewLoginRequestMapper(),
-		mapAccount.NewLoginResponseMapper(),
+		mappers.LoginRequest{},
+		mappers.LoginResponse{},
 		s.account.Login,
 		vld,
 	)
 
+	accountRegisterHandler := NewHandler(
+		mappers.RegisterRequest{},
+		mappers.RegisterResponse{},
+		s.account.Register,
+		vld,
+	)
+
 	accountChangePasswordHandler := NewHandler(
-		mapAccount.NewChangePasswordMapper(),
-		mapAccount.NewChangePasswordResponseMapper(),
+		mappers.ChangePasswordRequest{},
+		mappers.ChangePasswordResponse{},
 		s.account.ChangePassword,
 		vld,
 	)
 
 	profileCreateHandler := NewHandler(
-		mapProfile.NewCreateRequestMapper(),
-		mapProfile.NewCreateResponseMapper(),
+		mappers.CreateProfileRequest{},
+		mappers.CreateProfileResponse{},
 		s.profile.Create,
 		vld,
 	)
 
 	profileGetHandler := NewHandler(
-		mapProfile.NewGetByIdRequestMapper(),
-		mapProfile.NewGetByIdResponseMapper(),
+		mappers.GetProfileByIdRequest{},
+		mappers.GetProfileResponse{},
 		s.profile.GetById,
 		vld,
 	)
 
 	profileUpdateHandler := NewHandler(
-		mapProfile.NewUpdateRequestMapper(),
-		mapProfile.NewUpdateResponseMapper(),
+		mappers.UpdateProfileRequest{},
+		mappers.UpdateProfileResponse{},
 		s.profile.Update,
 		vld,
 	)
 
 	profileDeleteHandler := NewHandler(
-		mapProfile.NewDeleteByIdRequestMapper(),
-		mapProfile.NewDeleteByIdResponseMapper(),
+		mappers.DeleteProfileRequest{},
+		mappers.DeleteProfileResponse{},
 		s.profile.DeleteById,
 		vld,
 	)

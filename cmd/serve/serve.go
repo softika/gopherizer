@@ -12,7 +12,6 @@ import (
 
 	"github.com/softika/gopherizer/api"
 	"github.com/softika/gopherizer/config"
-	"github.com/softika/gopherizer/server"
 )
 
 func Run() {
@@ -25,7 +24,7 @@ func Run() {
 
 	router := api.NewRouter(cfg)
 
-	srv := server.New(cfg.Http)
+	srv := api.NewServer(cfg.Http)
 
 	// Start the server in a goroutine.
 	go func() {

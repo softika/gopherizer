@@ -3,16 +3,17 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	userSvc "github.com/softika/gopherizer/internal/profile"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/softika/gopherizer/internal/profile"
 )
 
 func (s *E2ETestSuite) TestCreateProfileHandler() {
 	testCases := []struct {
 		name     string
 		path     string
-		req      userSvc.CreateRequest
+		req      profile.CreateRequest
 		wantCode int
 	}{}
 

@@ -23,13 +23,12 @@ This is a Go template repository, providing a solid foundation for starting new 
 
 Top Level Directories
 
-- [api/](api) - http handlers and routes.
+- [api/](api) - http server, handlers and routes.
 - [cmd/](cmd) - cli commands like `migrate` and `server`.
 - [config/](config) - configuration and loading environment variables.
 - [database/](database) - database service, repositories and migration files.
 - [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities.
 - [pkg/](pkg) - reusable packages.
-- [server/](server) - http server.
 - [tests/](tests) - e2e tests.
 
 ### Environment Config
