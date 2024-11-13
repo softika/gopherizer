@@ -16,11 +16,12 @@ import (
 
 	// repositories
 	repoAccount "github.com/softika/gopherizer/database/repositories/account"
+	healthRepo "github.com/softika/gopherizer/database/repositories/health"
 	repoProfile "github.com/softika/gopherizer/database/repositories/profile"
 )
 
 type repositories struct {
-	db      database.Service
+	health  health.Repository
 	account account.Repository
 	profile profile.Repository
 }
@@ -28,7 +29,7 @@ type repositories struct {
 func (r *Router) initRepositories(cfg config.DatabaseConfig) repositories {
 	db := database.New(cfg)
 	return repositories{
-		db:      db,
+		health:  healthRepo.NewRepository(db),
 		account: repoAccount.NewRepository(db),
 		profile: repoProfile.NewRepository(db),
 	}
@@ -43,7 +44,7 @@ type services struct {
 func (r *Router) initServices(cfg config.AuthConfig, s repositories) services {
 	return services{
 		account: account.NewService(cfg, s.account),
-		health:  health.NewService(s.db),
+		health:  health.NewService(s.health),
 		profile: profile.NewService(s.profile),
 	}
 }

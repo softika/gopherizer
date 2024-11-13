@@ -10,7 +10,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/softika/gopherizer/database"
-	"github.com/softika/gopherizer/database/repositories"
 	"github.com/softika/gopherizer/internal/account"
 	"github.com/softika/gopherizer/internal/role"
 	"github.com/softika/gopherizer/pkg/errorx"
@@ -30,19 +29,19 @@ var (
 )
 
 type Repository struct {
-	repositories.TxManager
-	db database.Service
+	database.TxManager
+	database.Service
 }
 
-func NewRepository(dbService database.Service) Repository {
+func NewRepository(db database.Service) Repository {
 	return Repository{
-		TxManager: repositories.NewTxManager(dbService),
-		db:        dbService,
+		TxManager: database.NewTxManager(db),
+		Service:   db,
 	}
 }
 
 func (r Repository) Create(ctx context.Context, acc *account.Account) (*account.Account, error) {
-	if err := r.db.Pool().QueryRow(ctx, createSql,
+	if err := r.Pool().QueryRow(ctx, createSql,
 		acc.Email,    // $1
 		acc.Password, // $2
 	).Scan(&acc.Id, &acc.CreatedAt, &acc.UpdatedAt); err != nil {

@@ -1,12 +1,10 @@
-package repositories
+package database
 
 import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/softika/gopherizer/database"
 )
 
 // TxManager defines a method to execute a transaction from Begin until Commit or Rollback.
@@ -15,7 +13,7 @@ type TxManager interface {
 	Execute(context.Context, func(pgx.Tx) error) error
 }
 
-func NewTxManager(db database.Service) TxManager {
+func NewTxManager(db Service) TxManager {
 	return &txManager{db.Pool()}
 }
 

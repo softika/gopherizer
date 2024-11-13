@@ -57,19 +57,19 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		log := slogging.Slogger()
-		log.Info("creating a new database connection pool...")
+		logger := slogging.Slogger()
+		logger.Info("creating a new database connection pool...")
 
 		ctx := context.Background()
 
 		pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
 		if err != nil {
-			log.Error("failed to create db connection pool", "error", err)
+			logger.Error("failed to create db connection pool", "error", err)
 			panic(err)
 		}
 
 		if err = pool.Ping(ctx); err != nil {
-			log.Error("failed to ping db", "error", err)
+			logger.Error("failed to ping db", "error", err)
 			panic(err)
 		}
 

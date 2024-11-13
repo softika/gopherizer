@@ -6,13 +6,13 @@
 This is a Go template repository, providing a solid foundation for starting new projects.
 
 ## Features
-- [x] HTTP Server
+- [x] HTTP Server run with graceful shutdown
 - [x] JWT Authentication
-- [x] Database Service
-- [x] Migrations
-- [x] Configuration
-- [x] Logging
-- [x] Error Handling
+- [x] Database Service (Postgres)
+- [x] Migrations (goose)
+- [x] Configuration 
+- [x] Logging 
+- [x] Error Handling 
 - [x] Testing
 - [x] CI Pipeline (Github Actions)
 - [ ] OpenAPI Documentation
@@ -55,23 +55,20 @@ Each individual configuration is defined as a struct within `Config`, enabling s
 example:
 
 ```go
-package example 
+package database 
 
 import (
     "context"
-    "database/sql"
     "fmt"
 
     // pgx 
     "github.com/jackc/pgx/v5/pgxpool"
-    "github.com/jackc/pgx/v5/stdlib"
 	
     "github.com/softika/gopherizer/config"
 )
 
 type Service struct {
-  db   *sql.DB
-  pool *pgxpool.Pool
+    pool *pgxpool.Pool
 }
 
 func New(cfg config.DatabaseConfig) Service {
@@ -79,19 +76,19 @@ func New(cfg config.DatabaseConfig) Service {
         "postgresql://%s:%s@%s:%s/%s?sslmode=require",
         cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName, 
     )
+
+    ctx := context.Background()
 	
-    pool, err := pgxpool.New(context.Background(), dsn)
+    pool, err := pgxpool.New(ctx, dsn)
     if err != nil {
         panic(err)
     }
 
-    db := stdlib.OpenDBFromPool(pool)
-    if err = db.Ping(); err != nil {
+	if err = pool.Ping(ctx); err != nil {
         panic(err)
     }
 
     return Service{
-        db:   db,
         pool: pool,
     }
 }
