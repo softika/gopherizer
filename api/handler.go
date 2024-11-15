@@ -48,18 +48,18 @@ func NewHandler[In any, Out any](
 	}
 }
 
-// Handle handles the request.
+// Handle handles the http request.
 func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	logger := slogging.Slogger()
 
-	// Map request
+	// map request
 	in, err := h.requestMapper.Map(r)
 	if err != nil {
 		logger.ErrorContext(r.Context(), "failed to map request", "error", err)
 		return newError(http.StatusBadRequest, err.Error(), err)
 	}
 
-	// Validate request
+	// validate request
 	if h.validator != nil {
 		err = h.validator.StructCtx(r.Context(), in)
 		if err != nil {
@@ -68,14 +68,14 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 
-	// Call out to service function
+	// call out to service function
 	out, err := h.serviceFunc(r.Context(), in)
 	if err != nil {
 		logger.ErrorContext(r.Context(), "service function failed", "error", err)
 		return newServiceError(err)
 	}
 
-	// Map and return response
+	// map and return response
 	return h.responseMapper.Map(w, out)
 }
 
