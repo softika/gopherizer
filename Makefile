@@ -1,12 +1,25 @@
 # project name
 PROJECT_NAME = gopherizer
 
+## help: Show makefile commands
+.PHONY: help
+help: Makefile
+	@echo "---- Project: $(PROJECT_NAME) ----"
+	@echo
+	@echo " Usage: make <COMMAND>"
+	@echo
+	@echo " Available Commands:"
+	@echo
+	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
+	@echo
+
+## build: Build project
 .PHONY: build
 build:
 	@echo "=== Building $(PROJECT_NAME)..."
 	@go build -o $(PROJECT_NAME) main.go
 
-# Run the application
+## run: Run the application
 .PHONY: run
 run:
 	@echo "=== Running server..."
@@ -14,7 +27,7 @@ run:
 	@go run main.go serve
 
 
-# Create DB container
+## docker-run: Create and run docker containers
 .PHONY: docker-run
 docker-run:
 	@echo "=== Running docker containers..."
@@ -25,7 +38,7 @@ docker-run:
 		docker-compose up -d; \
 	fi
 
-# Shutdown DB container
+## docker-down: Shutdown docker containers
 .PHONY: docker-down
 docker-down:
 	@echo "=== Stopping docker containers..."
@@ -37,33 +50,33 @@ docker-down:
 	fi
 
 
-# migrate DB
+## migrate-up: Migrate the database
 .PHONY: migrate-up
 migrate-up:
 	@echo "=== Migrating database..."
 	@[ -f ./config/config ] || { cp ./config/default.config ./config/config; }
 	@go run main.go migrate up
 
-# rollback DB
+## migrate-down: Rollback the database migration
 .PHONY: migrate-down
 migrate-down:
 	@echo "=== Rolling back database..."
 	@[ -f ./config/config ] || { cp ./config/default.config ./config/config; }
 	@go run main.go migrate down
 
-# Test the application
+## test: Run tests
 .PHONY: test
 test:
 	@echo "=== Running tests with race detector"
 	go test -vet=off -count=1 -race -timeout=30s ./...
 
-# Clean the binary
+## clean: Clean the binary
 .PHONY: clean
 clean:
 	@echo "=== Cleaning..."
 	@rm -f $(PROJECT_NAME)
 
-# Live Reload
+## watch: Live Reload
 .PHONY: watch
 watch:
 	@if command -v air > /dev/null; then \
@@ -81,7 +94,7 @@ watch:
 	    fi; \
 	fi
 
-# Generate mocks
+## mocks: Generate mocks
 .PHONY: mocks
 mocks:
 	@go generate -x ./...
