@@ -23,7 +23,7 @@ type DeleteProfileResponse struct{}
 
 func (m DeleteProfileResponse) Map(w http.ResponseWriter, d bool) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusNoContent)
 
 	res := map[string]bool{"deleted": d}
 	return json.NewEncoder(w).Encode(res)

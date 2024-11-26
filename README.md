@@ -6,23 +6,21 @@
 This is a Go template repository, providing a solid foundation for starting new projects.
 
 ## Features
-- [x] HTTP Server run with graceful shutdown
-- [x] Routing with [Chi](https://go-chi.io/#/README) - easy to swap with other routers
-- [x] Database Service (Postgres)
-- [x] Migrations ([goose](https://github.com/pressly/goose))
-- [x] Dynamic configuration 
-- [x] Structured [logging](https://github.com/softika/slogging) 
-- [x] Centralized error Handling 
-- [x] Integration testing with [Testcontainers](https://golang.testcontainers.org/)
-- [x] CI Pipeline (GitHub Actions)
-- [x] Dockerized development environment
-- [ ] OpenAPI Documentation
-- [ ] OpenTelemetry
+- ✅ HTTP Server run with graceful shutdown
+- ✅ Routing with [Chi](https://go-chi.io/#/README) - easy to swap with other routers
+- ✅ Database Service (Postgres)
+- ✅ Migrations ([goose](https://github.com/pressly/goose))
+- ✅ Dynamic configuration 
+- ✅ Structured [logging](https://github.com/softika/slogging) 
+- ✅ Centralized error Handling 
+- ✅ Integration testing with [Testcontainers](https://golang.testcontainers.org/)
+- ✅ CI Pipeline (GitHub Actions)
+- ✅ Dockerized development environment
+- ✅ OpenAPI Documentation
+- 🏗️ OpenTelemetry
 
 
 ## Project Structure
-
-Top Level Directories
 
 - [api/](api) - http server, handlers and routes.
 - [cmd/](cmd) - cli commands, `serve` and `migrate`.

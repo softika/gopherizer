@@ -13,7 +13,7 @@ import (
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
-	Cause   error  `json:"cause"`
+	Cause   error  `json:"-"`
 }
 
 func newError(code int, message string, internal error) Error {

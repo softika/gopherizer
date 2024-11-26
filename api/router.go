@@ -29,6 +29,7 @@ func NewRouter(cfg *config.Config) *Router {
 	h := api.initHandlers(s)
 
 	api.initRoutes(h)
+	api.initOpenApiDocs()
 
 	return api
 }

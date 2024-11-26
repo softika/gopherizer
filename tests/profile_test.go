@@ -259,7 +259,7 @@ func (s *E2ETestSuite) TestDeleteProfileHandler() {
 		{
 			name:     "delete profile by id",
 			id:       "0dd35f9a-0d20-41f1-80c2-d7993e313fb7", // Bob Builder
-			wantCode: http.StatusOK,
+			wantCode: http.StatusNoContent,
 		},
 		{
 			name:     "delete profile by invalid id",
@@ -293,7 +293,7 @@ func (s *E2ETestSuite) TestDeleteProfileHandler() {
 			// then
 			s.Equal(tt.wantCode, w.Code)
 
-			if w.Code != http.StatusOK {
+			if w.Code != http.StatusNoContent {
 				return
 			}
 

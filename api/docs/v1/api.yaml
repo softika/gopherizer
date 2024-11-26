@@ -1,0 +1,221 @@
+openapi: 3.1.0
+
+info:
+  title: Gopherizer API
+  description: Gopherizer is a template API. Provides as an example CRUD operations for profile resources.
+  version: 1.0.0
+  contact:
+    name: Softika Team
+    email: office@softika.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+paths:
+  /api/v1/profile:
+    post:
+      tags:
+        - Profile
+      summary: Create profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRequest'
+      responses:
+        '201':
+          description: Profile created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          description: The request is invalid. Check the input for missing or incorrect fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: An unexpected error occurred on the server.
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Profile
+      summary: Update profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRequest'
+      responses:
+        '200':
+          description: Profile updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '400':
+          description: The request is invalid. Check the input for missing or incorrect fields.
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: An unexpected error occurred on the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/profile/{id}:
+    get:
+      tags:
+        - Profile
+      summary: Get profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully retrieved profile.
+        '400':
+          description: The request is invalid. Check the input for missing or incorrect fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Profile not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: An unexpected error occurred on the server.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Profile
+      summary: Delete profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Successfully deleted profile.
+        '400':
+          description: The request is invalid. Check the input for missing or incorrect fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '405':
+          description: Invalid profile id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: An unexpected error occurred on the server.
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid input data"
+
+    CreateRequest:
+      type: object
+      properties:
+        FirstName:
+          type: string
+          maxLength: 72
+          nullable: false
+          example: John
+        LastName:
+          type: string
+          maxLength: 72
+          nullable: false
+          example: Doe
+      required:
+        - FirstName
+        - LastName
+
+    UpdateRequest:
+      type: object
+      properties:
+        Id:
+          type: string
+          format: uuid
+          nullable: false
+          example: 123e4567-e89b-12d3-a456-426614174000
+        FirstName:
+          type: string
+          maxLength: 72
+          nullable: false
+          example: John
+        LastName:
+          type: string
+          maxLength: 72
+          nullable: false
+          example: Doe
+      required:
+        - Id
+        - FirstName
+        - LastName
+
+    ProfileResponse:
+      type: object
+      properties:
+        Id:
+          type: string
+          format: uuid
+          example: 123e4567-e89b-12d3-a456-426614174000
+        FirstName:
+          type: string
+          example: John
+        LastName:
+          type: string
+          example: Doe
+        CreatedAt:
+          type: string
+          format: date-time
+          example: "2021-10-01T12:00:00Z"
+        UpdatedAt:
+          type: string
+          format: date-time
+          example: "2021-10-01T12:00:00Z"
+      required:
+        - Id
+        - FirstName
+        - LastName
+        - CreatedAt
+        - UpdatedAt
