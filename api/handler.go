@@ -32,7 +32,7 @@ type Handler[In any, Out any] struct {
 	validator      Validator
 }
 
-// NewHandler creates a new handler.
+// NewHandler creates new handler.
 func NewHandler[In any, Out any](
 	reqMapper RequestMapper[In],
 	resMapper ResponseMapper[Out],
@@ -48,6 +48,11 @@ func NewHandler[In any, Out any](
 }
 
 // Handle handles the http request.
+// No need to write a separate handler for each endpoint.
+// Just create request and response mappers and use this generic handler.
+// It will map the request, validate it, call the service function and map the response.
+// It will return an error if any of the steps fail.
+// Assumes that the service function receives context and input type, and returns a output object and an error.
 func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	logger := slogging.Slogger()
 

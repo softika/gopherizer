@@ -13,9 +13,9 @@ help: Makefile
 	@sed -n 's/^##//p' $< | column -t -s ':' |  sed -e 's/^/ /'
 	@echo
 
-## compose: Run all services from docker compose file.
-.PHONY: compose
-compose:
+## start: Start all services from docker compose file.
+.PHONY: start
+start:
 	@echo "=== Running docker compose..."
 	@if docker compose up -d 2>/dev/null; then \
 		: ; \
@@ -24,9 +24,9 @@ compose:
 		docker-compose up -d; \
 	fi
 
-## compose-down: Shutdown all services from docker compose file.
-.PHONY: compose-down
-compose-down:
+## stop: Stop all services from docker compose file.
+.PHONY: stop
+stop:
 	@echo "=== Stopping docker compose..."
 	@if docker compose down 2>/dev/null; then \
 		: ; \
@@ -47,9 +47,9 @@ run:
 	@echo "=== Running server..."
 	@go run main.go serve
 
-## db-run: Run database in a docker container.
-.PHONY: db-run
-db-run:
+## db-start: Start database in a docker container.
+.PHONY: db-start
+db-start:
 	@echo "=== Running database docker container..."
 	@if docker compose up database -d 2>/dev/null; then \
 		: ; \
@@ -58,9 +58,9 @@ db-run:
 		docker-compose up -d; \
 	fi
 
-## db-down: Shutdown database docker container.
-.PHONY: db-down
-db-down:
+## db-stop: Shutdown database docker container.
+.PHONY: db-stop
+db-stop:
 	@echo "=== Stopping database docker container..."
 	@if docker compose down database 2>/dev/null; then \
 		: ; \

@@ -10,6 +10,9 @@ import (
 	"github.com/softika/gopherizer/config"
 )
 
+// Router is the main API router.
+// It is a wrapper around chi.Router with some additional functionality.
+// Chi router can be replaced with any other router that implements net/http.
 type Router struct {
 	chi.Router
 

@@ -22,11 +22,11 @@ The motivation behind creating this template repository was to establish a unifi
 
 ## Project Structure
 
-- [api/](api) - http server, handlers and routes.
-- [cmd/](cmd) - cli commands, `serve` and `migrate`.
-- [config/](config) - configuration and loading environment variables.
-- [database/](database) - database service, repositories and migration files.
-- [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities.
+- [api/](api) - http server, handlers and routes. More about api [here](api/README.md).
+- [cmd/](cmd) - cli commands, `serve` and `migrate`.  
+- [config/](config) - configuration and loading environment variables. More about config [here](config/README.md).
+- [database/](database) - database service, repositories and migration files. More about database [here](database/README.md).
+- [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities. More about internal [here](internal/README.md).
 - [pkg/](pkg) - reusable packages.
 - [tests/](tests) - e2e tests.
 
@@ -34,7 +34,7 @@ The motivation behind creating this template repository was to establish a unifi
 When you're ready, start your application by running:
 
 ``` bash
-make compose
+make start
 ``` 
 
 Your application will be available at http://localhost:8080.
