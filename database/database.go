@@ -5,14 +5,13 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
-
-	"github.com/softika/slogging"
 
 	"github.com/softika/gopherizer/config"
 )
@@ -57,19 +56,18 @@ var (
 
 func New(cfg config.DatabaseConfig) Service {
 	once.Do(func() {
-		logger := slogging.Slogger()
-		logger.Info("creating a new database connection pool...")
+		slog.Info("creating a new database connection pool...")
 
 		ctx := context.Background()
 
 		pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
 		if err != nil {
-			logger.Error("failed to create db connection pool", "error", err)
+			slog.Error("failed to create db connection pool", "error", err)
 			panic(err)
 		}
 
 		if err = pool.Ping(ctx); err != nil {
-			logger.Error("failed to ping db", "error", err)
+			slog.Error("failed to ping db", "error", err)
 			panic(err)
 		}
 
@@ -84,8 +82,6 @@ func New(cfg config.DatabaseConfig) Service {
 // Health checks the health of the database connection by pinging the database.
 // It returns a map with keys indicating various health statistics.
 func (s *service) Health(ctx context.Context) map[string]string {
-	log := slogging.Slogger()
-
 	stats := make(map[string]string)
 
 	// Ping the database
@@ -93,7 +89,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 	if err != nil {
 		stats["status"] = "down"
 		stats["error"] = fmt.Sprintf("db down: %v", err)
-		log.ErrorContext(ctx, "db is down", "error", err)
+		slog.ErrorContext(ctx, "db is down", "error", err)
 		return stats
 	}
 
@@ -140,7 +136,7 @@ func (s *service) Health(ctx context.Context) map[string]string {
 // If the connection is successfully closed, it returns nil.
 // If an error occurs while closing the connection, it returns the error.
 func (s *service) Close() error {
-	slogging.Slogger().Info("closing the database connection...")
+	slog.Info("closing the database connection...")
 	s.pool.Close()
 	return nil
 }

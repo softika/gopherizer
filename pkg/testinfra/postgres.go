@@ -2,12 +2,11 @@ package testinfra
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
-
-	"github.com/softika/slogging"
 
 	"github.com/softika/gopherizer/config"
 )
@@ -26,7 +25,6 @@ type PostgresContainer struct {
 }
 
 func RunPostgres() (*PostgresContainer, error) {
-	log := slogging.Slogger()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 	req := testcontainers.ContainerRequest{
@@ -56,7 +54,7 @@ func RunPostgres() (*PostgresContainer, error) {
 	var cfg config.DatabaseConfig
 	for {
 		if dbContainer.IsRunning() {
-			log.Info("database container is running")
+			slog.Info("database container is running")
 			host, err := dbContainer.Host(ctx)
 			if err != nil {
 				cancel()
@@ -79,7 +77,7 @@ func RunPostgres() (*PostgresContainer, error) {
 			}
 			break
 		}
-		log.Info("waiting for database container to start...")
+		slog.Info("waiting for database container to start...")
 	}
 
 	return &PostgresContainer{
@@ -87,7 +85,7 @@ func RunPostgres() (*PostgresContainer, error) {
 		Config: cfg,
 		Shutdown: func() error {
 			defer cancel()
-			log.Info("terminating database container...")
+			slog.Info("terminating database container...")
 			return dbContainer.Terminate(ctx)
 		},
 	}, nil

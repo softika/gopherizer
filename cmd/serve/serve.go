@@ -3,6 +3,7 @@ package serve
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,11 +15,13 @@ import (
 	"github.com/softika/gopherizer/config"
 )
 
+// Run starts the http server with graceful shutdown option.
 func Run() {
-	log := slogging.Slogger()
+	slog.SetDefault(slogging.Slogger()) // inject default logger
+
 	cfg, err := config.New()
 	if err != nil {
-		log.Error("failed to read config", "error", err)
+		slog.Error("failed to read config", "error", err)
 		os.Exit(1)
 	}
 
@@ -28,12 +31,12 @@ func Run() {
 
 	// Start the server in a goroutine.
 	go func() {
-		log.Info("starting the server...", "address", cfg.Http.Host+":"+cfg.Http.Port)
+		slog.Info("starting the server...", "address", cfg.Http.Host+":"+cfg.Http.Port)
 		if err = srv.Run(router); !errors.Is(err, http.ErrServerClosed) {
-			log.Error("server failed to run", "error", err)
+			slog.Error("server failed to run", "error", err)
 			os.Exit(1)
 		}
-		log.Info("stopped serving new connections.")
+		slog.Info("stopped serving new connections.")
 	}()
 
 	// Wait for interrupt signal to gracefully shut down the server with a timeout.
@@ -45,8 +48,8 @@ func Run() {
 	defer cancel()
 
 	if err = srv.Shutdown(ctx); err != nil {
-		log.Error("server shutdown error", "error", err)
+		slog.Error("server shutdown error", "error", err)
 	}
-	log.Info("Graceful shutdown completed.")
+	slog.Info("Graceful shutdown completed.")
 
 }

@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"log/slog"
 	"testing"
 
 	"github.com/pressly/goose/v3"
@@ -19,6 +20,8 @@ type RepositoriesTestSuite struct {
 }
 
 func (s *RepositoriesTestSuite) SetupSuite() {
+	slog.SetDefault(slogging.Slogger())
+
 	var err error
 
 	s.dbContainer, err = testinfra.RunPostgres()
@@ -39,11 +42,11 @@ func (s *RepositoriesTestSuite) SetupSuite() {
 
 func (s *RepositoriesTestSuite) TearDownSuite() {
 	if err := s.dbService.Close(); err != nil {
-		slogging.Slogger().Warn("failed to close db connection", "error", err)
+		slog.Warn("failed to close db connection", "error", err)
 	}
 
 	if err := s.dbContainer.Shutdown(); err != nil {
-		slogging.Slogger().Warn("failed to shutdown postgres container", "error", err)
+		slog.Warn("failed to shutdown postgres container", "error", err)
 	}
 }
 

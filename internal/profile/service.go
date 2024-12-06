@@ -4,8 +4,7 @@ package profile
 import (
 	"context"
 	"fmt"
-
-	"github.com/softika/slogging"
+	"log/slog"
 
 	"github.com/softika/gopherizer/internal"
 	"github.com/softika/gopherizer/pkg/errorx"
@@ -26,8 +25,7 @@ func NewService(r Repository) Service {
 func (s Service) GetById(ctx context.Context, req GetRequest) (*Response, error) {
 	u, err := s.repo.GetById(ctx, req.Id)
 	if err != nil {
-		logger := slogging.Slogger()
-		logger.ErrorContext(ctx, "failed to get profile by id", "id", req.Id, "error", err)
+		slog.ErrorContext(ctx, "failed to get profile by id", "id", req.Id, "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to get profile by id: %w", err),
 			errorx.ErrNotFound,
@@ -43,7 +41,7 @@ func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, erro
 
 	created, err := s.repo.Create(ctx, p)
 	if err != nil {
-		slogging.Slogger().ErrorContext(ctx, "failed to create profile", "error", err)
+		slog.ErrorContext(ctx, "failed to create profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to create profile: %w", err),
 			errorx.ErrInternal,
@@ -61,7 +59,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 
 	updated, err := s.repo.Update(ctx, u)
 	if err != nil {
-		slogging.Slogger().ErrorContext(ctx, "failed to update profile", "error", err)
+		slog.ErrorContext(ctx, "failed to update profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to update profile: %w", err),
 			errorx.ErrInternal,
@@ -76,8 +74,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 
 func (s Service) DeleteById(ctx context.Context, req DeleteRequest) (bool, error) {
 	if err := s.repo.DeleteById(ctx, req.Id); err != nil {
-		logger := slogging.Slogger()
-		logger.ErrorContext(ctx, "failed to delete profile by id", "id", req.Id, "error", err)
+		slog.ErrorContext(ctx, "failed to delete profile by id", "id", req.Id, "error", err)
 		return false, errorx.NewError(
 			fmt.Errorf("failed to delete profile by id: %w", err),
 			errorx.ErrInternal,

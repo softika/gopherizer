@@ -2,13 +2,12 @@ package config
 
 import (
 	"embed"
+	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
-
-	"github.com/softika/slogging"
 )
 
 //go:embed default.ini
@@ -27,12 +26,12 @@ func New() (*Config, error) {
 
 	file, err := configFile.Open("default.ini")
 	if err != nil {
-		slogging.Slogger().Error("failed reading config file", "error", err.Error())
+		slog.Error("failed reading config file", "error", err.Error())
 		return nil, err
 	}
 
 	if err = viper.ReadConfig(file); err != nil {
-		slogging.Slogger().Error("failed reading config file", "error", err.Error())
+		slog.Error("failed reading config file", "error", err.Error())
 		return nil, err
 	}
 

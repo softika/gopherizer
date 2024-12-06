@@ -1,6 +1,8 @@
 package migrate
 
 import (
+	"log/slog"
+
 	"github.com/spf13/cobra"
 
 	"github.com/softika/slogging"
@@ -19,21 +21,21 @@ var DownCmd = &cobra.Command{
 }
 
 func down() {
-	lgr := slogging.Slogger()
+	slog.SetDefault(slogging.Slogger())
 
 	cfg, err := config.New()
 	if err != nil {
-		lgr.Error("failed to read config", "error", err)
+		slog.Error("failed to read config", "error", err)
 		return
 	}
 
 	dvSvc := database.New(cfg.Database)
 
-	lgr.Info("rollback database migrations")
+	slog.Info("rollback database migrations")
 	if err := rollback(dvSvc.DB()); err != nil {
-		lgr.Error("failed to rollback database migrations", "error", err)
+		slog.Error("failed to rollback database migrations", "error", err)
 		return
 	}
 
-	lgr.Info("database migrations rollback completed successfully")
+	slog.Info("database migrations rollback completed successfully")
 }
