@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-//go:embed default.ini
+//go:embed default.toml
 var configFile embed.FS
 
 type Config struct {
@@ -20,11 +20,11 @@ type Config struct {
 }
 
 func New() (*Config, error) {
-	viper.SetConfigType("ini")
+	viper.SetConfigType("toml")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(`.`, `_`))
 	viper.AutomaticEnv()
 
-	file, err := configFile.Open("default.ini")
+	file, err := configFile.Open("default.toml")
 	if err != nil {
 		slog.Error("failed reading config file", "error", err.Error())
 		return nil, err

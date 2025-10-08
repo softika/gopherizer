@@ -57,7 +57,7 @@ docs for more detail on building and pushing.
 
 ### Environment Config
 
-All required environment variables for running this service are defined in `config/default.ini`.
+All required environment variables for running this service are defined in `config/default.toml`.
 
 Values in this file can be overridden by setting the corresponding environment variables. For example:
 
