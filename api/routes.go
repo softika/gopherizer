@@ -45,7 +45,7 @@ func (r *Router) initOpenApiDocs() {
 }
 
 func (r *Router) initRoutes(h handlers) {
-	h.health.Route(r, http.MethodGet, "/health")
+	r.Get("/health", r.HttpHandlerFunc(h.health.Handle))
 
 	r.Route("/api/v1", func(c chi.Router) {
 		c.Route("/profile", func(c chi.Router) {

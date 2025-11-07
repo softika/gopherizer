@@ -2,9 +2,8 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
-
-	"github.com/softika/slogging"
 )
 
 // ServiceFunc is a generic service function type called in a handler.
@@ -54,12 +53,10 @@ func NewHandler[In any, Out any](
 // It will return an error if any of the steps fail.
 // Assumes that the service function receives context and input type, and returns a output object and an error.
 func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
-	logger := slogging.Slogger()
-
 	// map request
 	in, err := h.requestMapper.Map(r)
 	if err != nil {
-		logger.ErrorContext(r.Context(), "failed to map request", "error", err)
+		slog.ErrorContext(r.Context(), "failed to map request", "error", err)
 		return newError(http.StatusBadRequest, err.Error(), err)
 	}
 
@@ -67,7 +64,7 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	if h.validator != nil {
 		err = h.validator.StructCtx(r.Context(), in)
 		if err != nil {
-			logger.ErrorContext(r.Context(), "request validation failed", "error", err)
+			slog.ErrorContext(r.Context(), "request validation failed", "error", err)
 			return newError(http.StatusBadRequest, err.Error(), err)
 		}
 	}
@@ -75,15 +72,10 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 	// call out to service function
 	out, err := h.serviceFunc(r.Context(), in)
 	if err != nil {
-		logger.ErrorContext(r.Context(), "service function failed", "error", err)
+		slog.ErrorContext(r.Context(), "service function failed", "error", err)
 		return newServiceError(err)
 	}
 
 	// map and return response
 	return h.responseMapper.Map(w, out)
-}
-
-// Route registers the handler with the router.
-func (h Handler[In, Out]) Route(router *Router, method, path string) {
-	router.Method(method, path, router.HttpHandlerFunc(h.Handle))
 }

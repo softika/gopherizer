@@ -47,11 +47,11 @@ func defaultMiddlewares(r *chi.Mux) {
 }
 
 // HandlerFunc is API generic handler func type.
-type HandlerFunc[In any, Out any] func(http.ResponseWriter, *http.Request) error
+type HandlerFunc func(http.ResponseWriter, *http.Request) error
 
 // HttpHandlerFunc creates http.HandlerFunc from custom HandlerFunc.
 // It handles API errors and returns them as HTTP errors.
-func (r *Router) HttpHandlerFunc(h HandlerFunc[any, any]) http.HandlerFunc {
+func (r *Router) HttpHandlerFunc(h HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		if err := h(w, req); err != nil {
 			var apiError Error
