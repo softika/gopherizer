@@ -68,12 +68,13 @@ func Run() {
 		os.Exit(1)
 	}
 
-	// The pool is a process-wide singleton, so this is the same instance the
-	// router builds its repositories on. Taking a handle here is what lets the
-	// shutdown path release it.
-	db := database.New(cfg.Database)
+	db, err := database.New(cfg.Database)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		os.Exit(1)
+	}
 
-	router := api.NewRouter(cfg)
+	router := api.NewRouter(cfg, db)
 
 	srv := api.NewServer(cfg.Http)
 

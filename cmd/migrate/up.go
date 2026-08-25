@@ -29,7 +29,16 @@ func up() {
 		return
 	}
 
-	dvSvc := database.New(cfg.Database)
+	dvSvc, err := database.New(cfg.Database)
+	if err != nil {
+		slog.Error("failed to connect to database", "error", err)
+		return
+	}
+	defer func() {
+		if cErr := dvSvc.Close(); cErr != nil {
+			slog.Warn("failed to close database", "error", cErr)
+		}
+	}()
 
 	slog.Info("running database migrations")
 	if err := migrate(dvSvc.DB()); err != nil {

@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"strconv"
 	"strings"
-	"sync"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -48,35 +48,32 @@ type service struct {
 	pool *pgxpool.Pool
 }
 
-var (
-	dbService *service
+// connectTimeout bounds startup so an unreachable database fails fast instead
+// of hanging the process indefinitely.
+const connectTimeout = 10 * time.Second
 
-	once sync.Once
-)
+// New opens a connection pool and verifies it is reachable.
+//
+// Each call returns an independent Service; the caller owns its lifetime and
+// must Close it. Failures are returned rather than panicked, so the server can
+// report a clear startup error.
+func New(cfg config.DatabaseConfig) (Service, error) {
+	slog.Info("creating a new database connection pool...")
 
-func New(cfg config.DatabaseConfig) Service {
-	once.Do(func() {
-		slog.Info("creating a new database connection pool...")
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
 
-		ctx := context.Background()
+	pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create db connection pool: %w", err)
+	}
 
-		pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
-		if err != nil {
-			slog.Error("failed to create db connection pool", "error", err)
-			panic(err)
-		}
+	if err = pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("failed to ping db: %w", err)
+	}
 
-		if err = pool.Ping(ctx); err != nil {
-			slog.Error("failed to ping db", "error", err)
-			panic(err)
-		}
-
-		dbService = &service{
-			pool: pool,
-		}
-	})
-
-	return dbService
+	return &service{pool: pool}, nil
 }
 
 // Health checks the health of the database connection by pinging the database.

@@ -33,15 +33,28 @@ func (s *E2ETestSuite) SetupSuite() {
 		s.T().Fatal("failed to start postgres container", err)
 	}
 
-	s.dbService = database.New(s.dbContainer.Config)
+	s.dbService, err = database.New(s.dbContainer.Config)
+	if err != nil {
+		s.T().Fatal("failed to connect to database", err)
+	}
 
 	s.prepareDb()
 
+	// Mirror the shipped defaults so the suite exercises the middleware stack
+	// the server actually runs with.
+	httpCfg := config.HTTPConfig{}
+	httpCfg.Metrics.Enabled = true
+	httpCfg.Metrics.Path = "/metrics"
+	httpCfg.Cors.Origins = "*"
+	httpCfg.Cors.Methods = "HEAD,GET,POST,PUT,PATCH,DELETE"
+	httpCfg.Cors.Headers = "Content-Type"
+
 	cfg := &config.Config{
 		App:      config.AppConfig{Environment: "test"},
+		Http:     httpCfg,
 		Database: s.dbContainer.Config,
 	}
-	s.router = api.NewRouter(cfg)
+	s.router = api.NewRouter(cfg, s.dbService)
 }
 
 func (s *E2ETestSuite) prepareDb() {

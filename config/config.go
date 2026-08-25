@@ -81,6 +81,12 @@ type HTTPConfig struct {
 		// TrustedHeader is the proxy-set header, used when From is "header".
 		TrustedHeader string `mapstructure:"trusted_header"`
 	} `mapstructure:"client_ip"`
+	Metrics struct {
+		// Enabled exposes the Prometheus endpoint. Keep it off the public
+		// listener in production, or restrict it at the ingress.
+		Enabled bool   `mapstructure:"enabled"`
+		Path    string `mapstructure:"path"`
+	} `mapstructure:"metrics"`
 }
 
 type DatabaseConfig struct {

@@ -27,14 +27,22 @@ func TestMain(m *testing.M) {
 }
 
 func TestNew(t *testing.T) {
-	srv := New(dbCfg)
+	srv, err := New(dbCfg)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
 	if srv == nil {
 		t.Fatal("New() returned nil")
 	}
+	t.Cleanup(func() { _ = srv.Close() })
 }
 
 func TestHealth(t *testing.T) {
-	srv := New(dbCfg)
+	srv, err := New(dbCfg)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+	t.Cleanup(func() { _ = srv.Close() })
 
 	stats := srv.Health(context.Background())
 
@@ -52,7 +60,10 @@ func TestHealth(t *testing.T) {
 }
 
 func TestClose(t *testing.T) {
-	srv := New(dbCfg)
+	srv, err := New(dbCfg)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
 
 	if srv.Close() != nil {
 		t.Fatalf("expected Close() to return nil")

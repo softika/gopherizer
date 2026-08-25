@@ -37,6 +37,7 @@ var clientErrors = map[errorx.ErrorType]clientError{
 	errorx.ErrForbidden:    {http.StatusForbidden, "forbidden"},
 	errorx.ErrNotFound:     {http.StatusNotFound, "not found"},
 	errorx.ErrInternal:     {http.StatusInternalServerError, "internal server error"},
+	errorx.ErrUnavailable:  {http.StatusServiceUnavailable, "service unavailable"},
 }
 
 // newServiceError converts a service failure into a safe API error.

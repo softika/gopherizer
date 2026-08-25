@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/softika/gopherizer/config"
+	"github.com/softika/gopherizer/database"
 )
 
 // Router is the main API router.
@@ -19,7 +20,10 @@ type Router struct {
 	environment string
 }
 
-func NewRouter(cfg *config.Config) *Router {
+// NewRouter builds the API router around an already-connected database.
+// The pool is injected rather than created here so its lifetime is owned by the
+// caller, which is what allows a clean shutdown.
+func NewRouter(cfg *config.Config, db database.Service) *Router {
 	r := chi.NewRouter()
 	defaultMiddlewares(r, cfg.Http)
 
@@ -28,7 +32,7 @@ func NewRouter(cfg *config.Config) *Router {
 		environment: cfg.App.Environment,
 	}
 
-	s := api.initServices(api.initRepositories(cfg.Database))
+	s := api.initServices(api.initRepositories(db))
 	h := api.initHandlers(s)
 
 	api.initRoutes(h)
@@ -37,7 +41,18 @@ func NewRouter(cfg *config.Config) *Router {
 	return api
 }
 
+// metricsPath returns the configured scrape path, falling back to the
+// conventional default when unset.
+func metricsPath(cfg config.HTTPConfig) string {
+	if cfg.Metrics.Path == "" {
+		return "/metrics"
+	}
+	return cfg.Metrics.Path
+}
+
 func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
+	// Correlation must run first so every later log line carries the ids.
+	r.Use(correlation)
 	r.Use(middleware.Logger)
 	r.Use(middleware.CleanPath)
 	r.Use(middleware.Recoverer)
@@ -47,6 +62,12 @@ func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 
 	if c := corsMiddleware(cfg); c != nil {
 		r.Use(c)
+	}
+
+	if cfg.Metrics.Enabled {
+		m := newMetrics()
+		r.Use(m.middleware)
+		r.Handle(metricsPath(cfg), m.handler())
 	}
 
 	if limiter := rateLimiter(cfg); limiter != nil {

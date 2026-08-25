@@ -10,6 +10,9 @@ const (
 	ErrForbidden
 	ErrNotFound
 	ErrUnauthorized
+	// ErrUnavailable marks a dependency failure: the request is valid but the
+	// service cannot serve it right now.
+	ErrUnavailable
 )
 
 type Error struct {

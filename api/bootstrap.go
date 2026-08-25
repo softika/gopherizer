@@ -3,7 +3,6 @@ package api
 import (
 	"github.com/go-playground/validator/v10"
 
-	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
 
 	// internal services
@@ -22,8 +21,7 @@ type repositories struct {
 	profile profile.Repository
 }
 
-func (r *Router) initRepositories(cfg config.DatabaseConfig) repositories {
-	db := database.New(cfg)
+func (r *Router) initRepositories(db database.Service) repositories {
 	return repositories{
 		health:  repos.NewHealthRepository(db),
 		profile: repos.NewProfileRepository(db),
@@ -43,7 +41,8 @@ func (r *Router) initServices(s repositories) services {
 }
 
 type handlers struct {
-	health Handler[health.Request, *health.Response]
+	health     Handler[health.Request, *health.Response]
+	healthLive Handler[health.Request, *health.Response]
 
 	profileCreate Handler[profile.CreateRequest, *profile.Response]
 	profileGet    Handler[profile.GetRequest, *profile.Response]
@@ -58,6 +57,13 @@ func (r *Router) initHandlers(s services) handlers {
 		mappers.HealthRequest{},
 		mappers.HealthResponse{},
 		s.health.Check,
+		vld,
+	)
+
+	healthLiveHandler := NewHandler(
+		mappers.HealthRequest{},
+		mappers.HealthResponse{},
+		s.health.Live,
 		vld,
 	)
 
@@ -90,7 +96,8 @@ func (r *Router) initHandlers(s services) handlers {
 	)
 
 	return handlers{
-		health: healthHandler,
+		health:     healthHandler,
+		healthLive: healthLiveHandler,
 
 		profileCreate: profileCreateHandler,
 		profileGet:    profileGetHandler,

@@ -24,6 +24,11 @@ from = "remote_addr"
 trusted_proxies = 0
 trusted_header = ""
 
+# Prometheus endpoint. Restrict this at the ingress; it is not authenticated.
+[http.metrics]
+enabled = true
+path = "/metrics"
+
 [http.cors]
 origins = "*"
 methods = "HEAD,GET,POST,PUT,PATCH,DELETE"

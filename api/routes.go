@@ -45,6 +45,12 @@ func (r *Router) initOpenApiDocs() {
 }
 
 func (r *Router) initRoutes(h handlers) {
+	// Liveness answers "is the process alive" and must not touch dependencies.
+	// Readiness answers "can this instance serve traffic" and does.
+	r.Get("/health/live", r.HttpHandlerFunc(h.healthLive.Handle))
+	r.Get("/health/ready", r.HttpHandlerFunc(h.health.Handle))
+
+	// Kept for existing probes; behaves as readiness.
 	r.Get("/health", r.HttpHandlerFunc(h.health.Handle))
 
 	r.Route("/api/v1", func(c chi.Router) {

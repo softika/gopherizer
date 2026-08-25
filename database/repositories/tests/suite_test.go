@@ -29,7 +29,10 @@ func (s *RepositoriesTestSuite) SetupSuite() {
 		s.T().Fatal("failed to start postgres container", err)
 	}
 
-	s.dbService = database.New(s.dbContainer.Config)
+	s.dbService, err = database.New(s.dbContainer.Config)
+	if err != nil {
+		s.T().Fatal("failed to connect to database", err)
+	}
 
 	if err = goose.Up(s.dbService.DB(), "../../migrations"); err != nil {
 		s.T().Fatal("failed to run migrations", err)
