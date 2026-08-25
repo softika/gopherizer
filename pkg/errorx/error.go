@@ -1,5 +1,7 @@
 package errorx
 
+import "errors"
+
 type ErrorType int
 
 const (
@@ -24,4 +26,20 @@ func NewError(err error, code ErrorType) *Error {
 
 func (e *Error) Error() string {
 	return e.Err.Error()
+}
+
+// Unwrap exposes the wrapped error so errors.Is and errors.As keep working
+// through the domain error.
+func (e *Error) Unwrap() error {
+	return e.Err
+}
+
+// TypeOf reports the ErrorType carried anywhere in err's chain.
+// Errors that carry no type are treated as internal failures.
+func TypeOf(err error) ErrorType {
+	var typed *Error
+	if errors.As(err, &typed) {
+		return typed.Type
+	}
+	return ErrInternal
 }

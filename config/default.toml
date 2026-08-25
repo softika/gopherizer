@@ -7,11 +7,25 @@ version = "1.0.0"
 host = "0.0.0.0"
 port = 8080
 read_timeout = "2m"
+read_header_timeout = "10s"
 write_timeout = "2m"
 idle_timeout = "2m"
 
 [http.auth]
 secret = "change-me"
+
+[http.rate_limit]
+requests = 100
+window = "1m"
+
+# How the caller's IP is resolved for rate limiting.
+#   "remote_addr" - direct connections; proxy headers ignored (default)
+#   "xff"         - behind `trusted_proxies` reverse proxies; uses X-Forwarded-For
+#   "header"      - a proxy-set header named by `trusted_header`
+[http.client_ip]
+from = "remote_addr"
+trusted_proxies = 0
+trusted_header = ""
 
 [http.cors]
 origins = "*"

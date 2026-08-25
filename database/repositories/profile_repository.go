@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	_ "embed"
+	"fmt"
 
 	"github.com/softika/gopherizer/database"
 	"github.com/softika/gopherizer/internal/profile"
@@ -40,7 +41,7 @@ func (r ProfileRepository) GetById(ctx context.Context, id string) (*profile.Pro
 		&p.CreatedAt,
 		&p.UpdatedAt,
 	); err != nil {
-		return nil, err
+		return nil, classify(fmt.Errorf("failed to get profile by id: %w", err))
 	}
 
 	return p, nil
@@ -51,7 +52,7 @@ func (r ProfileRepository) Create(ctx context.Context, p *profile.Profile) (*pro
 		p.FirstName, // $1
 		p.LastName,  // $2
 	).Scan(&p.Id, &p.CreatedAt, &p.UpdatedAt); err != nil {
-		return nil, err
+		return nil, classify(fmt.Errorf("failed to create profile: %w", err))
 	}
 
 	return p, nil
@@ -63,12 +64,21 @@ func (r ProfileRepository) Update(ctx context.Context, p *profile.Profile) (*pro
 		p.LastName,  // $2
 		p.Id,        // $3
 	).Scan(&p.Id, &p.CreatedAt, &p.UpdatedAt); err != nil {
-		return nil, err
+		return nil, classify(fmt.Errorf("failed to update profile: %w", err))
 	}
 	return p, nil
 }
 
 func (r ProfileRepository) DeleteById(ctx context.Context, id string) error {
-	_, err := r.Pool().Exec(ctx, profileDeleteByIdSql, id)
-	return err
+	tag, err := r.Pool().Exec(ctx, profileDeleteByIdSql, id)
+	if err != nil {
+		return classify(fmt.Errorf("failed to delete profile by id: %w", err))
+	}
+
+	// A DELETE that matches nothing is not a success.
+	if tag.RowsAffected() == 0 {
+		return notFound("profile", id)
+	}
+
+	return nil
 }

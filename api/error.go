@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -24,27 +23,32 @@ func newError(code int, message string, internal error) Error {
 	}
 }
 
+// clientError is the client-facing rendering of a domain error type.
+// Messages are deliberately generic: internal detail stays in Cause, which is
+// logged server-side and never serialized.
+type clientError struct {
+	code    int
+	message string
+}
+
+var clientErrors = map[errorx.ErrorType]clientError{
+	errorx.ErrInvalidInput: {http.StatusBadRequest, "invalid request"},
+	errorx.ErrUnauthorized: {http.StatusUnauthorized, "unauthorized"},
+	errorx.ErrForbidden:    {http.StatusForbidden, "forbidden"},
+	errorx.ErrNotFound:     {http.StatusNotFound, "not found"},
+	errorx.ErrInternal:     {http.StatusInternalServerError, "internal server error"},
+}
+
+// newServiceError converts a service failure into a safe API error.
 func newServiceError(err error) Error {
-	code := http.StatusInternalServerError
-	// Check if the error is a service error
-	// and set the appropriate HTTP status code
-	var errService *errorx.Error
-	if errors.As(err, &errService) {
-		switch errService.Type {
-		case errorx.ErrInvalidInput:
-			code = http.StatusBadRequest
-		case errorx.ErrForbidden:
-			code = http.StatusForbidden
-		case errorx.ErrNotFound:
-			code = http.StatusNotFound
-		default:
-			code = http.StatusInternalServerError
-		}
+	ce, ok := clientErrors[errorx.TypeOf(err)]
+	if !ok {
+		ce = clientErrors[errorx.ErrInternal]
 	}
 
 	return Error{
-		Code:    code,
-		Message: err.Error(),
+		Code:    ce.code,
+		Message: ce.message,
 		Cause:   err,
 	}
 }
@@ -57,8 +61,6 @@ func (e Error) Error() string {
 		b.WriteString(e.Message)
 		b.WriteString(`","code":`)
 		b.WriteString(strconv.Itoa(e.Code))
-		b.WriteString(`,"cause":"`)
-		b.WriteString(e.Cause.Error())
 		b.WriteString(`}`)
 		return b.String()
 	}

@@ -53,16 +53,34 @@ type AppConfig struct {
 }
 
 type HTTPConfig struct {
-	Host         string        `mapstructure:"host"`
-	Port         string        `mapstructure:"port" validate:"required"`
-	ReadTimeout  time.Duration `mapstructure:"read_timeout"`
-	WriteTimeout time.Duration `mapstructure:"write_timeout"`
-	IdleTimeout  time.Duration `mapstructure:"idle_timeout"`
-	Cors         struct {
+	Host              string        `mapstructure:"host"`
+	Port              string        `mapstructure:"port" validate:"required"`
+	ReadTimeout       time.Duration `mapstructure:"read_timeout"`
+	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
+	WriteTimeout      time.Duration `mapstructure:"write_timeout"`
+	IdleTimeout       time.Duration `mapstructure:"idle_timeout"`
+	Cors              struct {
 		Origins string `mapstructure:"origins"`
 		Methods string `mapstructure:"methods"`
 		Headers string `mapstructure:"headers"`
 	} `mapstructure:"cors"`
+	RateLimit struct {
+		// Requests allowed per Window, per client. Zero disables limiting.
+		Requests int           `mapstructure:"requests"`
+		Window   time.Duration `mapstructure:"window"`
+	} `mapstructure:"rate_limit"`
+	// ClientIP declares the trust model used to resolve a caller's address.
+	// Getting this wrong either lumps every client behind a proxy into one
+	// bucket, or lets callers spoof their identity via a header.
+	ClientIP struct {
+		// From selects the resolver: "remote_addr" (default), "xff", "header".
+		From string `mapstructure:"from"`
+		// TrustedProxies is the number of reverse proxies in front of the app,
+		// used when From is "xff".
+		TrustedProxies int `mapstructure:"trusted_proxies"`
+		// TrustedHeader is the proxy-set header, used when From is "header".
+		TrustedHeader string `mapstructure:"trusted_header"`
+	} `mapstructure:"client_ip"`
 }
 
 type DatabaseConfig struct {

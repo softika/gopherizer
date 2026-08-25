@@ -21,7 +21,7 @@ type Router struct {
 
 func NewRouter(cfg *config.Config) *Router {
 	r := chi.NewRouter()
-	defaultMiddlewares(r)
+	defaultMiddlewares(r, cfg.Http)
 
 	api := &Router{
 		Router:      r,
@@ -37,13 +37,19 @@ func NewRouter(cfg *config.Config) *Router {
 	return api
 }
 
-func defaultMiddlewares(r *chi.Mux) {
+func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.CleanPath)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/"))
 	r.Use(middleware.NoCache)
 	r.Use(middleware.AllowContentEncoding("deflate", "gzip"))
+
+	if limiter := rateLimiter(cfg); limiter != nil {
+		// The resolver must run before the limiter so the bucket key is correct.
+		r.Use(clientIPResolver(cfg))
+		r.Use(limiter)
+	}
 }
 
 // HandlerFunc is API generic handler func type.

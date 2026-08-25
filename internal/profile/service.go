@@ -28,7 +28,7 @@ func (s Service) GetById(ctx context.Context, req GetRequest) (*Response, error)
 		slog.ErrorContext(ctx, "failed to get profile by id", "id", req.Id, "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to get profile by id: %w", err),
-			errorx.ErrNotFound,
+			errorx.TypeOf(err),
 		)
 	}
 
@@ -44,7 +44,7 @@ func (s Service) Create(ctx context.Context, req CreateRequest) (*Response, erro
 		slog.ErrorContext(ctx, "failed to create profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to create profile: %w", err),
-			errorx.ErrInternal,
+			errorx.TypeOf(err),
 		)
 	}
 
@@ -62,7 +62,7 @@ func (s Service) Update(ctx context.Context, req UpdateRequest) (*Response, erro
 		slog.ErrorContext(ctx, "failed to update profile", "error", err)
 		return nil, errorx.NewError(
 			fmt.Errorf("failed to update profile: %w", err),
-			errorx.ErrInternal,
+			errorx.TypeOf(err),
 		)
 	}
 
@@ -77,7 +77,7 @@ func (s Service) DeleteById(ctx context.Context, req DeleteRequest) (bool, error
 		slog.ErrorContext(ctx, "failed to delete profile by id", "id", req.Id, "error", err)
 		return false, errorx.NewError(
 			fmt.Errorf("failed to delete profile by id: %w", err),
-			errorx.ErrInternal,
+			errorx.TypeOf(err),
 		)
 	}
 
