@@ -54,9 +54,20 @@ func openApiConfig(cfg *config.Config) huma.Config {
 	c.OpenAPIPath = "/openapi"
 	c.DocsPath = "/docs"
 
+	// huma defaults to Stoplight Elements, which renders a "powered by
+	// Stoplight" credit. SwaggerUI carries no third-party attribution and, with
+	// the default BaseLayout huma uses, no vendor topbar either.
+	c.DocsRenderer = huma.DocsRendererSwaggerUI
+
 	// Package-qualified schema names, so same-named types across packages do
 	// not collide in huma's single global registry.
 	c.Components.Schemas = newSchemaRegistry()
+
+	// DefaultConfig's only create hook installs a schema-link transformer that
+	// stamps a "$schema" field into every response body and a matching Link
+	// header. Both embed the server's own host, putting deployment detail into
+	// payloads, so the hook is dropped. The OpenAPI document is unaffected.
+	c.CreateHooks = nil
 
 	return c
 }
