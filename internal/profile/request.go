@@ -5,14 +5,14 @@ type GetRequest struct {
 }
 
 type CreateRequest struct {
-	FirstName string `validate:"required,max=72"`
-	LastName  string `validate:"required,max=72"`
+	FirstName string `json:"firstName" validate:"required,max=72"`
+	LastName  string `json:"lastName" validate:"required,max=72"`
 }
 
 type UpdateRequest struct {
-	Id        string `validate:"required,uuid"`
-	FirstName string `validate:"required,max=72"`
-	LastName  string `validate:"required,max=72"`
+	Id        string `json:"id" validate:"required,uuid"`
+	FirstName string `json:"firstName" validate:"required,max=72"`
+	LastName  string `json:"lastName" validate:"required,max=72"`
 }
 
 type DeleteRequest struct {

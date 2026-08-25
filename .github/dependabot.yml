@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  # Go modules. Patch and minor bumps are grouped so routine upkeep is one PR
+  # rather than a dozen; majors stay separate because they need review.
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      go-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Workflow actions. Pinned majors go stale quietly and drift onto deprecated
+  # runtimes, which is how the lint job ended up stuck on golangci-lint v1.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  # Base images in the Dockerfile.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

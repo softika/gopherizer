@@ -45,7 +45,7 @@ services:
   # Postgres database.
   database:
     container_name: database
-    image: postgres:latest
+    image: postgres:18-alpine
     restart: always
     # secrets:
     # - db-password

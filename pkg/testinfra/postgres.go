@@ -28,7 +28,7 @@ func RunPostgres() (*PostgresContainer, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
 	req := testcontainers.ContainerRequest{
-		Image:        "postgres:alpine",
+		Image:        "postgres:18-alpine",
 		ExposedPorts: []string{"5432/tcp"},
 		Env: map[string]string{
 			"POSTGRES_USER":     dbUser,

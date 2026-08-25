@@ -1,0 +1,53 @@
+version: "2"
+
+run:
+  timeout: 10m
+
+linters:
+  default: standard
+  enable:
+    # Security scanner: hardcoded credentials, weak crypto, unsafe file perms,
+    # missing timeouts (G112, which this repo previously tripped).
+    - gosec
+    # Enforces %w wrapping and errors.Is/As over == and type assertions.
+    - errorlint
+    # HTTP response bodies must be closed, or the connection leaks.
+    - bodyclose
+    # Contexts must be passed down, never dropped or replaced with Background.
+    - contextcheck
+    # Flags sloppy error handling that errcheck alone misses.
+    - errchkjson
+    # Catches loop-variable capture and other common footguns.
+    - copyloopvar
+    # SQL rows/statements must be closed and rows.Err checked.
+    - rowserrcheck
+    - sqlclosecheck
+    # Struct tags must actually parse; a typo silently disables binding.
+    - musttag
+    # Reports unhandled type-switch and switch cases on typed constants.
+    - exhaustive
+    - nilerr
+    - noctx
+    - unconvert
+    - wastedassign
+
+  settings:
+    gosec:
+      excludes:
+        # Integer conversion audit is noisy on pool statistics counters.
+        - G115
+    exhaustive:
+      default-signifies-exhaustive: true
+    errcheck:
+      check-type-assertions: true
+
+  exclusions:
+    rules:
+      # Tests intentionally construct failure states and skip cleanup that
+      # production code must not.
+      - path: _test\.go
+        linters:
+          - gosec
+          - bodyclose
+          - noctx
+          - contextcheck

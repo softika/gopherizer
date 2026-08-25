@@ -155,67 +155,67 @@ components:
     CreateRequest:
       type: object
       properties:
-        FirstName:
+        firstName:
           type: string
           maxLength: 72
           nullable: false
           example: John
-        LastName:
+        lastName:
           type: string
           maxLength: 72
           nullable: false
           example: Doe
       required:
-        - FirstName
-        - LastName
+        - firstName
+        - lastName
 
     UpdateRequest:
       type: object
       properties:
-        Id:
+        id:
           type: string
           format: uuid
           nullable: false
           example: 123e4567-e89b-12d3-a456-426614174000
-        FirstName:
+        firstName:
           type: string
           maxLength: 72
           nullable: false
           example: John
-        LastName:
+        lastName:
           type: string
           maxLength: 72
           nullable: false
           example: Doe
       required:
-        - Id
-        - FirstName
-        - LastName
+        - id
+        - firstName
+        - lastName
 
     ProfileResponse:
       type: object
       properties:
-        Id:
+        id:
           type: string
           format: uuid
           example: 123e4567-e89b-12d3-a456-426614174000
-        FirstName:
+        firstName:
           type: string
           example: John
-        LastName:
+        lastName:
           type: string
           example: Doe
-        CreatedAt:
+        createdAt:
           type: string
           format: date-time
           example: "2021-10-01T12:00:00Z"
-        UpdatedAt:
+        updatedAt:
           type: string
           format: date-time
           example: "2021-10-01T12:00:00Z"
       required:
-        - Id
-        - FirstName
-        - LastName
-        - CreatedAt
-        - UpdatedAt
+        - id
+        - firstName
+        - lastName
+        - createdAt
+        - updatedAt
