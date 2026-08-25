@@ -45,6 +45,10 @@ func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 	r.Use(middleware.NoCache)
 	r.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 
+	if c := corsMiddleware(cfg); c != nil {
+		r.Use(c)
+	}
+
 	if limiter := rateLimiter(cfg); limiter != nil {
 		// The resolver must run before the limiter so the bucket key is correct.
 		r.Use(clientIPResolver(cfg))

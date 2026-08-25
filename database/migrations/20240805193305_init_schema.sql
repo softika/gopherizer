@@ -11,5 +11,5 @@ CREATE TABLE IF NOT EXISTS profiles (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS accounts, profiles, roles, account_roles;
+DROP TABLE IF EXISTS profiles;
 -- +goose StatementEnd

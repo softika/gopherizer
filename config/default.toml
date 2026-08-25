@@ -11,9 +11,6 @@ read_header_timeout = "10s"
 write_timeout = "2m"
 idle_timeout = "2m"
 
-[http.auth]
-secret = "change-me"
-
 [http.rate_limit]
 requests = 100
 window = "1m"
