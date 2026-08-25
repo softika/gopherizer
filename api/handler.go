@@ -9,54 +9,44 @@ import (
 // ServiceFunc is a generic service function type called in a handler.
 type ServiceFunc[In any, Out any] func(context.Context, In) (Out, error)
 
-// RequestMapper is generic interfaces for mapping request objects.
-type RequestMapper[In any] interface {
-	Map(*http.Request) (In, error)
-}
-
-// ResponseMapper is generic interfaces for mapping response objects.
-type ResponseMapper[Out any] interface {
-	Map(http.ResponseWriter, Out) error
-}
-
 type Validator interface {
 	StructCtx(ctx context.Context, s interface{}) (err error)
 }
 
 // Handler is a generic handler type.
 type Handler[In any, Out any] struct {
-	serviceFunc    ServiceFunc[In, Out]
-	requestMapper  RequestMapper[In]
-	responseMapper ResponseMapper[Out]
-	validator      Validator
+	serviceFunc ServiceFunc[In, Out]
+	decode      Decoder[In]
+	encode      Encoder[Out]
+	validator   Validator
 }
 
 // NewHandler creates new handler.
 func NewHandler[In any, Out any](
-	reqMapper RequestMapper[In],
-	resMapper ResponseMapper[Out],
+	decode Decoder[In],
+	encode Encoder[Out],
 	svcFunc ServiceFunc[In, Out],
 	vld Validator,
 ) Handler[In, Out] {
 	return Handler[In, Out]{
-		requestMapper:  reqMapper,
-		responseMapper: resMapper,
-		serviceFunc:    svcFunc,
-		validator:      vld,
+		decode:      decode,
+		encode:      encode,
+		serviceFunc: svcFunc,
+		validator:   vld,
 	}
 }
 
-// Handle handles the http request.
-// No need to write a separate handler for each endpoint.
-// Just create request and response mappers and use this generic handler.
-// It will map the request, validate it, call the service function and map the response.
-// It will return an error if any of the steps fail.
-// Assumes that the service function receives context and input type, and returns a output object and an error.
+// Handle runs the request pipeline: decode, validate, call the service, encode.
+//
+// No endpoint needs its own handler. Compose one from a Decoder and an Encoder
+// (see codec.go for the reusable ones) plus the service function to call. Each
+// stage stops the pipeline on failure, so a later stage never runs on input an
+// earlier one rejected.
 func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
-	// map request
-	in, err := h.requestMapper.Map(r)
+	// decode request
+	in, err := h.decode(r)
 	if err != nil {
-		slog.ErrorContext(r.Context(), "failed to map request", "error", err)
+		slog.ErrorContext(r.Context(), "failed to decode request", "error", err)
 		return newError(http.StatusBadRequest, err.Error(), err)
 	}
 
@@ -76,6 +66,6 @@ func (h Handler[In, Out]) Handle(w http.ResponseWriter, r *http.Request) error {
 		return newServiceError(err)
 	}
 
-	// map and return response
-	return h.responseMapper.Map(w, out)
+	// encode and return response
+	return h.encode(w, out)
 }

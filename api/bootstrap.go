@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/go-playground/validator/v10"
 
 	"github.com/softika/gopherizer/database"
@@ -11,9 +13,6 @@ import (
 
 	// database repositories
 	repos "github.com/softika/gopherizer/database/repositories"
-
-	// http handler mappers
-	"github.com/softika/gopherizer/api/mappers"
 )
 
 type repositories struct {
@@ -53,55 +52,47 @@ type handlers struct {
 func (r *Router) initHandlers(s services) handlers {
 	vld := validator.New()
 
-	healthHandler := NewHandler(
-		mappers.HealthRequest{},
-		mappers.HealthResponse{},
-		s.health.Check,
-		vld,
-	)
-
-	healthLiveHandler := NewHandler(
-		mappers.HealthRequest{},
-		mappers.HealthResponse{},
-		s.health.Live,
-		vld,
-	)
-
-	profileCreateHandler := NewHandler(
-		mappers.CreateProfileRequest{},
-		mappers.CreateProfileResponse{},
-		s.profile.Create,
-		vld,
-	)
-
-	profileGetHandler := NewHandler(
-		mappers.GetProfileByIdRequest{},
-		mappers.GetProfileResponse{},
-		s.profile.GetById,
-		vld,
-	)
-
-	profileUpdateHandler := NewHandler(
-		mappers.UpdateProfileRequest{},
-		mappers.UpdateProfileResponse{},
-		s.profile.Update,
-		vld,
-	)
-
-	profileDeleteHandler := NewHandler(
-		mappers.DeleteProfileRequest{},
-		mappers.DeleteProfileResponse{},
-		s.profile.DeleteById,
-		vld,
-	)
+	// Each endpoint is a decoder, an encoder and the service call to make.
+	// The reusable decoders and encoders live in codec.go.
+	byId := func(id string) profile.GetRequest { return profile.GetRequest{Id: id} }
+	deleteById := func(id string) profile.DeleteRequest { return profile.DeleteRequest{Id: id} }
 
 	return handlers{
-		health:     healthHandler,
-		healthLive: healthLiveHandler,
-
-		profileCreate: profileCreateHandler,
-		profileGet:    profileGetHandler,
-		profileUpdate: profileUpdateHandler,
-		profileDelete: profileDeleteHandler,
+		health: NewHandler(
+			Static(health.Request{Status: "OK"}),
+			JSON[*health.Response](http.StatusOK),
+			s.health.Check,
+			vld,
+		),
+		healthLive: NewHandler(
+			Static(health.Request{Status: "OK"}),
+			JSON[*health.Response](http.StatusOK),
+			s.health.Live,
+			vld,
+		),
+		profileCreate: NewHandler(
+			JSONBody[profile.CreateRequest],
+			JSON[*profile.Response](http.StatusCreated),
+			s.profile.Create,
+			vld,
+		),
+		profileGet: NewHandler(
+			PathParam("id", byId),
+			JSON[*profile.Response](http.StatusOK),
+			s.profile.GetById,
+			vld,
+		),
+		profileUpdate: NewHandler(
+			JSONBody[profile.UpdateRequest],
+			JSON[*profile.Response](http.StatusOK),
+			s.profile.Update,
+			vld,
+		),
+		profileDelete: NewHandler(
+			PathParam("id", deleteById),
+			NoContent[bool],
+			s.profile.DeleteById,
+			vld,
+		),
 	}
 }
