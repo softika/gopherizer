@@ -57,7 +57,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # Postgres 18+ images store data in a major-version subdirectory, so the
+      # mount belongs at /var/lib/postgresql rather than .../data. Mounting the
+      # old path leaves it unused and the entrypoint refuses to start.
+      # See https://github.com/docker-library/postgres/pull/1259
+      - db_data:/var/lib/postgresql
     networks:
       - gopher
     healthcheck:

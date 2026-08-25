@@ -26,7 +26,13 @@ type Router struct {
 // caller, which is what allows a clean shutdown.
 func NewRouter(cfg *config.Config, db database.Service) *Router {
 	r := chi.NewRouter()
-	defaultMiddlewares(r, cfg.Http)
+
+	// Every middleware first; routes only afterwards.
+	m := defaultMiddlewares(r, cfg.Http)
+
+	if m != nil {
+		r.Handle(metricsPath(cfg.Http), m.handler())
+	}
 
 	api := &Router{
 		Router:      r,
@@ -64,7 +70,13 @@ func metricsPath(cfg config.HTTPConfig) string {
 	return cfg.Metrics.Path
 }
 
-func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
+// defaultMiddlewares registers the middleware stack and returns the metrics
+// collectors when they are enabled, so the caller can mount the scrape endpoint.
+//
+// chi panics if Use is called after any route is registered, so this function
+// must not register routes: every r.Use in the process has to happen before the
+// first r.Handle.
+func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) *metrics {
 	// Correlation must run first so every later log line carries the ids.
 	r.Use(correlation)
 	r.Use(middleware.Logger)
@@ -78,10 +90,10 @@ func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 		r.Use(c)
 	}
 
+	var m *metrics
 	if cfg.Metrics.Enabled {
-		m := newMetrics()
+		m = newMetrics()
 		r.Use(m.middleware)
-		r.Handle(metricsPath(cfg), m.handler())
 	}
 
 	if limiter := rateLimiter(cfg); limiter != nil {
@@ -89,4 +101,6 @@ func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 		r.Use(clientIPResolver(cfg))
 		r.Use(limiter)
 	}
+
+	return m
 }
