@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"uuid"
 
 	"github.com/softika/slogging"
 	"github.com/stretchr/testify/assert"
@@ -37,6 +38,11 @@ func TestCorrelationGeneratesIds(t *testing.T) {
 	requestId, ok := ctx.Value(slogging.RequestIdKey).(string)
 	require.True(t, ok, "request id must be in the context for slogging to pick up")
 	assert.NotEmpty(t, requestId)
+
+	// The generated id must be a real UUID, whichever implementation issues it.
+	parsed, err := uuid.Parse(requestId)
+	require.NoErrorf(t, err, "generated request id %q is not a valid uuid", requestId)
+	assert.NotEqual(t, uuid.Nil(), parsed, "the nil uuid is not a usable identifier")
 
 	correlationId, ok := ctx.Value(slogging.CorrelationIdKey).(string)
 	require.True(t, ok, "correlation id must be in the context")

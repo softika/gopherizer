@@ -62,7 +62,7 @@ func (s *E2ETestSuite) prepareDb() {
 		s.T().Fatal("failed to run migrations", err)
 	}
 
-	if err := goose.Up(s.dbService.DB(), "testdata"); err != nil {
+	if err := goose.Up(s.dbService.DB(), "testdata", goose.WithAllowMissing()); err != nil {
 		s.T().Fatal("failed to seed test data", err)
 	}
 }

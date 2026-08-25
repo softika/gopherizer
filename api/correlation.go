@@ -3,8 +3,8 @@ package api
 import (
 	"context"
 	"net/http"
+	"uuid"
 
-	"github.com/google/uuid"
 	"github.com/softika/slogging"
 )
 
@@ -27,7 +27,9 @@ const (
 // hop alone and is always freshly generated.
 func correlation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestId := uuid.NewString()
+		// v7 embeds a timestamp, so ids sort chronologically. That makes a log
+		// aggregator's range queries cheap and keeps any index on the id local.
+		requestId := uuid.NewV7().String()
 
 		correlationId := safeId(r.Header.Get(correlationIdHeader))
 		if correlationId == "" {

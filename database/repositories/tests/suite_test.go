@@ -38,7 +38,10 @@ func (s *RepositoriesTestSuite) SetupSuite() {
 		s.T().Fatal("failed to run migrations", err)
 	}
 
-	if err = goose.Up(s.dbService.DB(), "testdata"); err != nil {
+	// Seeds share goose's version ledger with the schema migrations, so a
+	// schema migration newer than the seed makes the seed look out of order.
+	// Seed data is not a schema change; allow it to apply regardless.
+	if err = goose.Up(s.dbService.DB(), "testdata", goose.WithAllowMissing()); err != nil {
 		s.T().Fatal("failed to seed test data", err)
 	}
 }

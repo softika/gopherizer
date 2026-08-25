@@ -1,5 +1,7 @@
 package tests
 
+// huma answers request-validation failures with 422 Unprocessable Entity:
+// the request parsed but violated the schema. This replaced the previous 400.
 import (
 	"bytes"
 	"encoding/json"
@@ -26,7 +28,7 @@ func (s *E2ETestSuite) TestCreateProfileHandler() {
 		{
 			name:     "create profile with empty request",
 			req:      profile.CreateRequest{},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "create profile with empty first name",
@@ -34,7 +36,7 @@ func (s *E2ETestSuite) TestCreateProfileHandler() {
 				FirstName: "",
 				LastName:  "Snow",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "create profile with empty last name",
@@ -42,7 +44,7 @@ func (s *E2ETestSuite) TestCreateProfileHandler() {
 				FirstName: "John",
 				LastName:  "",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "create profile with long first name",
@@ -50,7 +52,7 @@ func (s *E2ETestSuite) TestCreateProfileHandler() {
 				FirstName: "John John John John John John John John John John John John John John John John John John John John John",
 				LastName:  "Snow",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 	}
 
@@ -104,7 +106,7 @@ func (s *E2ETestSuite) TestGetProfileHandler() {
 		{
 			name:     "get profile by invalid id",
 			id:       "invalid",
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:     "get profile by non-existent id",
@@ -167,7 +169,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 		{
 			name:     "update profile with empty request",
 			req:      profile.UpdateRequest{},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "update profile with empty first name",
@@ -176,7 +178,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 				FirstName: "",
 				LastName:  "Doe",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "update profile with empty last name",
@@ -185,7 +187,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 				FirstName: "Jane",
 				LastName:  "",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "update profile with long first name",
@@ -194,7 +196,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 				FirstName: "John John John John John John John John John John John John John John John John John John John John",
 				LastName:  "Doe",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "update profile with invalid id",
@@ -203,7 +205,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 				FirstName: "Jane",
 				LastName:  "Doe",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name: "update profile with non-existent id",
@@ -212,7 +214,7 @@ func (s *E2ETestSuite) TestUpdateProfileHandler() {
 				FirstName: "Jane",
 				LastName:  "Doe",
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 	}
 
@@ -264,12 +266,12 @@ func (s *E2ETestSuite) TestDeleteProfileHandler() {
 		{
 			name:     "delete profile by invalid id",
 			id:       "invalid",
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:     "delete profile by non-existent id",
 			id:       "999",
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:     "delete profile by empty id",

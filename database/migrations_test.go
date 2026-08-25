@@ -32,11 +32,38 @@ func TestMigrationsRoundTrip(t *testing.T) {
 	require.NoError(t, goose.Up(db, dir), "up must apply cleanly")
 	assert.True(t, tableExists(t, pool, "profiles"), "profiles must exist after up")
 
-	require.NoError(t, goose.Down(db, dir), "down must roll back cleanly")
+	// DownTo(0) rolls back every migration; Down alone reverts only the newest.
+	require.NoError(t, goose.DownTo(db, dir, 0), "down must roll back cleanly")
 	assert.False(t, tableExists(t, pool, "profiles"), "profiles must be gone after down")
 
 	require.NoError(t, goose.Up(db, dir), "up must be repeatable after a down")
 	assert.True(t, tableExists(t, pool, "profiles"))
+}
+
+// The primary key default must issue time-ordered ids, so inserts append to the
+// right-hand edge of the index instead of scattering across it.
+func TestProfileIdDefaultIsUuidV7(t *testing.T) {
+	pool, err := pgxpool.New(context.Background(), dsnFromConfig(dbCfg))
+	require.NoError(t, err)
+	t.Cleanup(pool.Close)
+
+	db := stdlib.OpenDBFromPool(pool)
+	t.Cleanup(func() { _ = db.Close() })
+
+	require.NoError(t, goose.SetDialect(GetDialect()))
+	goose.SetBaseFS(GetMigrationFS())
+	t.Cleanup(func() { goose.SetBaseFS(nil) })
+	require.NoError(t, goose.Up(db, "migrations"))
+
+	ctx := context.Background()
+
+	var version int
+	err = pool.QueryRow(ctx, `
+		INSERT INTO profiles (first_name, last_name) VALUES ('Ada', 'Lovelace')
+		RETURNING uuid_extract_version(id)`).Scan(&version)
+	require.NoError(t, err)
+
+	assert.Equal(t, 7, version, "generated ids must be UUIDv7")
 }
 
 // TestDownMigrationOnlyDropsWhatUpCreates fails if a down step names a table

@@ -1,9 +1,8 @@
 package api
 
 import (
-	"errors"
-	"net/http"
-
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
@@ -12,11 +11,13 @@ import (
 )
 
 // Router is the main API router.
-// It is a wrapper around chi.Router with some additional functionality.
-// Chi router can be replaced with any other router that implements net/http.
+//
+// Routing and middleware stay with chi; huma sits on top and owns request
+// decoding, validation, responses and the generated OpenAPI document.
 type Router struct {
 	chi.Router
 
+	api         huma.API
 	environment string
 }
 
@@ -32,13 +33,26 @@ func NewRouter(cfg *config.Config, db database.Service) *Router {
 		environment: cfg.App.Environment,
 	}
 
-	s := api.initServices(api.initRepositories(db))
-	h := api.initHandlers(s)
+	api.api = humachi.New(r, openApiConfig(cfg))
 
-	api.initRoutes(h)
-	api.initOpenApiDocs()
+	registerOperations(api.api, api.initServices(api.initRepositories(db)))
 
 	return api
+}
+
+// openApiConfig describes the generated document and where it is served.
+func openApiConfig(cfg *config.Config) huma.Config {
+	c := huma.DefaultConfig(cfg.App.Name, cfg.App.Version)
+
+	// Served as /openapi.json and /openapi.yaml, with the browsable UI at /docs.
+	c.OpenAPIPath = "/openapi"
+	c.DocsPath = "/docs"
+
+	// Package-qualified schema names, so same-named types across packages do
+	// not collide in huma's single global registry.
+	c.Components.Schemas = newSchemaRegistry()
+
+	return c
 }
 
 // metricsPath returns the configured scrape path, falling back to the
@@ -74,25 +88,5 @@ func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) {
 		// The resolver must run before the limiter so the bucket key is correct.
 		r.Use(clientIPResolver(cfg))
 		r.Use(limiter)
-	}
-}
-
-// HandlerFunc is API generic handler func type.
-type HandlerFunc func(http.ResponseWriter, *http.Request) error
-
-// HttpHandlerFunc creates http.HandlerFunc from custom HandlerFunc.
-// It handles API errors and returns them as HTTP errors.
-func (r *Router) HttpHandlerFunc(h HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		if err := h(w, req); err != nil {
-			var apiError Error
-			if errors.As(err, &apiError) {
-				http.Error(w, apiError.Error(), apiError.Code)
-				return
-			}
-
-			apiError = newError(http.StatusInternalServerError, "internal server error", err)
-			http.Error(w, apiError.Error(), http.StatusInternalServerError)
-		}
 	}
 }
