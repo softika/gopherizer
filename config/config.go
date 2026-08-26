@@ -17,6 +17,7 @@ type Config struct {
 	App      AppConfig      `mapstructure:"app"`
 	Http     HTTPConfig     `mapstructure:"http"`
 	Database DatabaseConfig `mapstructure:"database" validate:"required"`
+	Tracing  TracingConfig  `mapstructure:"tracing"`
 }
 
 func New() (*Config, error) {
@@ -50,6 +51,11 @@ type AppConfig struct {
 	Name        string `mapstructure:"name" validate:"required"`
 	Environment string `mapstructure:"environment" validate:"required"`
 	Version     string `mapstructure:"version" validate:"required"`
+	// LogLevel overrides the level implied by Environment. Empty derives it,
+	// so a deployment only sets this when it wants something other than the
+	// default. An unrecognised value fails at startup rather than silently
+	// falling back.
+	LogLevel string `mapstructure:"log_level" validate:"omitempty,oneof=debug info warn error"`
 }
 
 type HTTPConfig struct {
@@ -96,4 +102,20 @@ type DatabaseConfig struct {
 	Password        string `mapstructure:"password" validate:"required"`
 	User            string `mapstructure:"user" validate:"required"`
 	SSLModeDisabled bool   `mapstructure:"sslmode_disabled"`
+}
+
+// TracingConfig configures OpenTelemetry trace export.
+//
+// Disabled by default: the template must run, and its tests must pass, without
+// a collector listening anywhere.
+type TracingConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+	// Endpoint is the OTLP/HTTP receiver as host:port, with no scheme.
+	Endpoint string `mapstructure:"endpoint"`
+	// Insecure sends over plain HTTP. Acceptable to a collector on localhost,
+	// wrong across a network.
+	Insecure bool `mapstructure:"insecure"`
+	// SampleRatio is the head sampling ratio for traces started here. Traces
+	// started upstream follow the caller's decision.
+	SampleRatio float64 `mapstructure:"sample_ratio" validate:"gte=0,lte=1"`
 }

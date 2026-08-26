@@ -1,10 +1,13 @@
 package api
 
 import (
+	"log/slog"
+
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"go.opentelemetry.io/otel"
 
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
@@ -28,7 +31,7 @@ func NewRouter(cfg *config.Config, db database.Service) *Router {
 	r := chi.NewRouter()
 
 	// Every middleware first; routes only afterwards.
-	m := defaultMiddlewares(r, cfg.Http)
+	m := defaultMiddlewares(r, cfg, db)
 
 	if m != nil {
 		r.Handle(metricsPath(cfg.Http), m.handler())
@@ -87,29 +90,39 @@ func metricsPath(cfg config.HTTPConfig) string {
 // chi panics if Use is called after any route is registered, so this function
 // must not register routes: every r.Use in the process has to happen before the
 // first r.Handle.
-func defaultMiddlewares(r *chi.Mux, cfg config.HTTPConfig) *metrics {
-	// Correlation must run first so every later log line carries the ids.
+func defaultMiddlewares(r *chi.Mux, cfg *config.Config, db database.Service) *metrics {
+	// Tracing runs first so the span is on the context that every later
+	// middleware sees, which is what lets the access log carry a trace id.
+	if cfg.Tracing.Enabled {
+		r.Use(tracing(otel.GetTracerProvider(), otel.GetTextMapPropagator()))
+	}
+
+	// Correlation runs next so every later log line carries the ids,
+	// including the access log line registered immediately after it.
 	r.Use(correlation)
-	r.Use(middleware.Logger)
+	r.Use(accessLogger(cfg.Http, slog.Default()))
 	r.Use(middleware.CleanPath)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/"))
 	r.Use(middleware.NoCache)
 	r.Use(middleware.AllowContentEncoding("deflate", "gzip"))
 
-	if c := corsMiddleware(cfg); c != nil {
+	if c := corsMiddleware(cfg.Http); c != nil {
 		r.Use(c)
 	}
 
 	var m *metrics
-	if cfg.Metrics.Enabled {
-		m = newMetrics()
+	if cfg.Http.Metrics.Enabled {
+		m = newMetrics(
+			withBuildInfo(cfg.App),
+			withPoolStats(poolStatsFrom(db)),
+		)
 		r.Use(m.middleware)
 	}
 
-	if limiter := rateLimiter(cfg); limiter != nil {
+	if limiter := rateLimiter(cfg.Http); limiter != nil {
 		// The resolver must run before the limiter so the bucket key is correct.
-		r.Use(clientIPResolver(cfg))
+		r.Use(clientIPResolver(cfg.Http))
 		r.Use(limiter)
 	}
 

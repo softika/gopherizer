@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // routeUnmatched buckets requests that matched no route.
@@ -28,7 +30,10 @@ type metrics struct {
 	duration *prometheus.HistogramVec
 }
 
-func newMetrics() *metrics {
+// metricsOption registers an additional collector on the private registry.
+type metricsOption func(*metrics)
+
+func newMetrics(opts ...metricsOption) *metrics {
 	labels := []string{"method", "route", "status"}
 
 	m := &metrics{
@@ -51,6 +56,10 @@ func newMetrics() *metrics {
 		collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 	)
 
+	for _, opt := range opts {
+		opt(m)
+	}
+
 	return m
 }
 
@@ -70,13 +79,37 @@ func (m *metrics) middleware(next http.Handler) http.Handler {
 		}
 
 		m.requests.With(labels).Inc()
-		m.duration.With(labels).Observe(time.Since(start).Seconds())
+		m.observeDuration(r.Context(), labels, time.Since(start).Seconds())
 	})
 }
 
-// handler serves the collected metrics in the Prometheus exposition format.
+// observeDuration records latency, attaching the active trace as an exemplar.
+//
+// An exemplar is what turns a latency spike in Grafana into one click through
+// to the trace that caused it. Only sampled traces are attached: an unsampled
+// trace never reaches the backend, so linking to it would offer a dead end.
+func (m *metrics) observeDuration(ctx context.Context, labels prometheus.Labels, seconds float64) {
+	observer := m.duration.With(labels)
+
+	if sc := trace.SpanContextFromContext(ctx); sc.IsSampled() {
+		if e, ok := observer.(prometheus.ExemplarObserver); ok {
+			e.ObserveWithExemplar(seconds, prometheus.Labels{"trace_id": sc.TraceID().String()})
+			return
+		}
+	}
+
+	observer.Observe(seconds)
+}
+
+// handler serves the collected metrics.
+//
+// OpenMetrics is enabled because it is the only exposition format that can
+// carry exemplars; Prometheus negotiates it via the Accept header and falls
+// back to the classic text format for scrapers that do not ask for it.
 func (m *metrics) handler() http.Handler {
-	return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{})
+	return promhttp.HandlerFor(m.registry, promhttp.HandlerOpts{
+		EnableOpenMetrics: true,
+	})
 }
 
 // routePattern returns the matched route template, never the raw path, so path

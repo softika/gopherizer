@@ -31,6 +31,8 @@ defer db.Close()
   startup error.
 - **Connection is bounded by a 10s timeout**, so an unreachable database fails
   fast instead of hanging the process.
+- **Options adjust the pool before it opens.** `WithQueryTracer` is how tracing
+  is attached, without any repository knowing about it.
 - `Close` must be called. `cmd/serve` closes it after the HTTP server has
   drained, and does so even when the shutdown itself failed, so a shutdown
   error cannot leak connections.
@@ -108,6 +110,30 @@ var (
 
 Repositories satisfy the generic `internal.Repository[T, ID]` interface, so the
 service layer depends on the shape, not the implementation.
+
+### Query tracing (`tracing.go`)
+
+`WithQueryTracer` installs a `pgx.QueryTracer` on the pool, so every query gets
+a client span:
+
+```go
+db, err := database.New(cfg.Database, database.WithQueryTracer(otel.GetTracerProvider()))
+```
+
+Instrumenting at the driver is what keeps this invisible to the layers above.
+No repository is annotated, no call site changes, and queries issued inside a
+transaction are covered too — by construction rather than by remembering.
+
+Two decisions are load-bearing:
+
+- **Arguments are never recorded.** The statement text goes on the span, and
+  because statements are parameterised it carries no values. `data.Args` holds
+  the real ones — names, emails, tokens — and spans leave the process for a
+  third-party backend. There is a test asserting no argument reaches an
+  attribute.
+- **`pgx.ErrNoRows` is not an error.** It is how a lookup reports "not found",
+  which is an ordinary outcome. Marking those spans failed would bury the real
+  failures.
 
 #### Error classification (`repositories/errors.go`)
 

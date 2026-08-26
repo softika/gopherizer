@@ -1,0 +1,5 @@
+# Intentionally empty.
+#
+# Mounting the whole provisioning directory replaces Grafana's own, so every
+# subdirectory it expects must exist or it logs an error on each start. Nothing
+# is provisioned here; the directory exists to keep the startup log clean.

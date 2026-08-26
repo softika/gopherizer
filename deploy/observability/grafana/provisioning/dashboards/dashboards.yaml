@@ -1,0 +1,18 @@
+# Loads every dashboard JSON file under the mounted directory at startup.
+
+apiVersion: 1
+
+providers:
+  - name: gopherizer
+    orgId: 1
+    folder: Gopherizer
+    type: file
+    # Edits made in the UI are allowed but are overwritten from disk on the
+    # next scan. The files are the source of truth; treat the UI as a scratch
+    # pad and copy anything worth keeping back into the JSON.
+    allowUiUpdates: true
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

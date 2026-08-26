@@ -19,6 +19,11 @@ services:
     environment:
       DATABASE_HOST: database
       HTTP_PORT: 8080
+      # Tracing stays off unless asked for, so the default stack needs no
+      # collector. `make observability` sets this to true.
+      TRACING_ENABLED: ${TRACING_ENABLED:-false}
+      TRACING_ENDPOINT: ${TRACING_ENDPOINT:-tempo:4318}
+      TRACING_INSECURE: "true"
     ports:
       - "8080:8080"
     networks:
@@ -69,6 +74,76 @@ services:
         interval: 10s
         timeout: 5s
         retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Observability stack.
+  #
+  # Behind a compose profile, so `make start` stays fast for anyone who only
+  # wants the API and a database. Start it with `make observability`.
+  # ---------------------------------------------------------------------------
+
+  # Trace backend, receiving OTLP directly from the application. No collector
+  # sits in between: Tempo accepts OTLP natively and one less moving part in a
+  # template is worth more than the routing flexibility a collector would add.
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:2.10.8
+    profiles: [observability]
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./deploy/observability/tempo.yaml:/etc/tempo.yaml:ro
+    ports:
+      - "3200:3200"   # query API
+      - "4318:4318"   # OTLP/HTTP, used when the app runs on the host
+    networks:
+      - gopher
+
+  # Metrics store. Exemplar storage is opt-in and off by default; without it
+  # the trace ids attached to histogram samples are accepted and discarded.
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v3.14.0
+    profiles: [observability]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --enable-feature=exemplar-storage
+      - --web.enable-lifecycle
+    volumes:
+      - ./deploy/observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    # Lets the scrape reach an app running on the host via `make run`. Docker
+    # Desktop resolves host.docker.internal already; Linux needs this mapping.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - gopher
+
+  # Dashboards, with Prometheus and Tempo provisioned and linked.
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:13.0.7
+    profiles: [observability]
+    environment:
+      # Local development only: this removes the login entirely. Never carry
+      # these settings into a deployed Grafana.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+    volumes:
+      # Datasources and the dashboard provider.
+      - ./deploy/observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      # Dashboard JSON, read at startup and rescanned periodically.
+      - ./deploy/observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - tempo
+    networks:
+      - gopher
+
 
 volumes:
   db_data:

@@ -51,16 +51,20 @@ scrape endpoint afterwards.
 
 The order matters:
 
-1. `correlation` — **first**, so every later log line carries the ids
-2. `middleware.Logger`
-3. `middleware.CleanPath`
-4. `middleware.Recoverer`
-5. `middleware.Heartbeat("/")`
-6. `middleware.NoCache`
-7. `middleware.AllowContentEncoding("deflate", "gzip")`
-8. CORS, when origins are configured
-9. metrics, when enabled
-10. client-IP resolver, then the rate limiter — the resolver must run first or
+1. `tracing`, when enabled — **first**, so the span is on the context that every
+   later middleware sees, which is what lets the access log carry a trace id
+2. `correlation` — so every later log line carries the request and correlation ids
+3. `accessLogger` — registered straight after correlation, so the one line
+   recording status and latency is joinable to everything else
+4. `middleware.CleanPath`
+5. `middleware.Recoverer`
+6. `middleware.Heartbeat("/")`
+7. `middleware.NoCache`
+8. `middleware.AllowContentEncoding("deflate", "gzip")`
+9. CORS, when origins are configured
+10. metrics, when enabled — inside tracing, so a sampled span is available to
+    attach as an exemplar
+11. client-IP resolver, then the rate limiter — the resolver must run first or
     the bucket key is wrong
 
 #### OpenAPI configuration
@@ -185,6 +189,40 @@ else is **discarded rather than sanitized** — these values are written to logs
 and a caller must not be able to forge entries by smuggling newlines or quotes
 through a header.
 
+### `tracing.go`
+
+Starts a server span per request and joins it to an upstream trace when the
+caller sent a `traceparent`.
+
+Written by hand rather than using `otelhttp`, for one reason: `otelhttp` names
+the span before chi has routed, which puts the raw path in the span name and
+mints one name per path parameter — the same cardinality mistake `routePattern`
+exists to prevent for metric labels. Here the span opens under the method alone
+and is renamed once the route is known.
+
+Only `5xx` marks a span as an error. A `4xx` is the caller's mistake, and
+flagging those would bury real faults.
+
+The tracer provider and propagator are injected rather than read from
+OpenTelemetry's globals, so tests can assert on real spans without mutating
+process-wide state.
+
+### `accesslog.go`
+
+One structured record per request: method, route pattern, path, status, bytes,
+duration, remote address and user agent.
+
+It replaces chi's `middleware.Logger`, which wrote coloured plain text through
+the standard library logger. That put two formats on stdout — half of which no
+aggregator could parse — and left the one line recording a request's status and
+latency with no correlation id, so it could not be joined to the application
+logs for the same request.
+
+The level follows the status: `5xx` logs at error, `4xx` at warn, everything
+else at info, so a failing endpoint is findable without knowing to filter on a
+status field. Requests to the metrics path are skipped; a 15s scrape interval
+would otherwise bury the logs this middleware exists to produce.
+
 ### `clientip.go`
 
 Establishes the caller's address for the configured trust model
@@ -227,3 +265,42 @@ is the matched chi route *pattern*, never the raw path — labelling with the ra
 path would mint a new time series for every URL a scanner probes, which is a
 cheap way to exhaust the metrics backend. Unmatched requests collapse into a
 single `unmatched` bucket.
+
+The latency histogram attaches the active `trace_id` as an **exemplar** when the
+request was sampled, which is what makes a spike on a dashboard one click from
+the trace that caused it. Unsampled requests record latency normally rather than
+emitting a link that resolves to nothing. Exemplars require the OpenMetrics
+exposition format, so the handler enables it; Prometheus negotiates it via
+`Accept` and must be started with `--enable-feature=exemplar-storage` or it will
+accept the exemplars and discard them.
+
+### `dbmetrics.go`
+
+Connection pool statistics and build identity.
+
+| Metric | Notes |
+| --- | --- |
+| `db_pool_connections{state}` | `acquired`, `idle`, `constructing` |
+| `db_pool_connections_max` | Pool size |
+| `db_pool_acquires_total` | Total acquisitions |
+| `db_pool_acquire_waits_total` | Acquisitions that had to wait — the saturation signal |
+| `db_pool_acquire_cancels_total` | Acquisitions abandoned before a connection freed |
+| `db_pool_acquire_duration_seconds_total` | Total duration of acquires, construction included — not queueing time alone |
+| `db_pool_connections_closed_total{reason}` | `idle` or `lifetime` |
+| `app_build_info{name,version,environment,go_version}` | Always `1`; the labels are the point |
+
+These numbers were already being computed for the readiness probe and discarded
+into a map of strings. Pool saturation is what actually pages someone, and it
+was the one signal missing from Prometheus.
+
+The collector reads at scrape time and holds no state, so a scrape reflects the
+pool as it is rather than as it was when something last sampled it. A nil pool
+yields zeros rather than panicking: collection runs inside a scrape, and a
+scrape must never take down the endpoint that explains what is wrong — least of
+all while the database is the thing going wrong.
+
+There is deliberately **no** `dependency_up` gauge. It would need a real `Ping`
+per scrape, which makes `/metrics` fail when the database does, losing every
+metric including the ones diagnosing the outage.
+`http_requests_total{route="/health/ready",status="503"}` already carries that
+signal.

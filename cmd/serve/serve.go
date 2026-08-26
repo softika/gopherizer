@@ -12,10 +12,13 @@ import (
 	"time"
 
 	"github.com/softika/slogging"
+	"go.opentelemetry.io/otel"
 
 	"github.com/softika/gopherizer/api"
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/pkg/logx"
+	"github.com/softika/gopherizer/pkg/otelx"
 )
 
 // shutdownSignals are the signals that trigger a graceful shutdown.
@@ -60,15 +63,33 @@ func shutdown(ctx context.Context, srv httpServer, db resource) error {
 
 // Run starts the http server with graceful shutdown option.
 func Run() {
-	slog.SetDefault(slogging.Slogger()) // inject default logger
-
+	// Config is read before the logger is built, because the logger's level
+	// comes from it. A failure here therefore reports through slog's default
+	// handler, which is the only case in the process that does.
 	cfg, err := config.New()
 	if err != nil {
 		slog.Error("failed to read config", "error", err)
 		os.Exit(1)
 	}
 
-	db, err := database.New(cfg.Database)
+	// Tracing is initialised before the logger so the extractor below has a
+	// provider to read from, and before the pool so queries are instrumented.
+	flushTraces, err := otelx.Init(context.Background(), cfg.App, cfg.Tracing)
+	if err != nil {
+		slog.Error("failed to initialise tracing", "error", err)
+		os.Exit(1)
+	}
+
+	// TraceAttrs is registered alongside ContextIds rather than instead of it:
+	// correlation ids are present on every request, trace ids only on sampled
+	// ones. Naming both is required, since an explicit extractor replaces the
+	// default rather than adding to it.
+	slog.SetDefault(logx.New(cfg.App, slogging.WithExtractor(
+		slogging.ContextIds,
+		otelx.TraceAttrs,
+	)))
+
+	db, err := database.New(cfg.Database, database.WithQueryTracer(otel.GetTracerProvider()))
 	if err != nil {
 		slog.Error("failed to connect to database", "error", err)
 		os.Exit(1)
@@ -99,6 +120,14 @@ func Run() {
 	if err = shutdown(ctx, srv, db); err != nil {
 		slog.Error("graceful shutdown error", "error", err)
 	}
+
+	// Spans are batched, so the exporter is flushed once the server has
+	// drained. Without this the last requests before a deploy are the ones
+	// that never reach the backend -- exactly the ones worth having.
+	if err = flushTraces(ctx); err != nil {
+		slog.Error("failed to flush traces", "error", err)
+	}
+
 	slog.Info("Graceful shutdown completed.")
 
 }

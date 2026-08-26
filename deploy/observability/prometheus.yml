@@ -1,0 +1,24 @@
+# Local scrape configuration for the gopherizer template.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: gopherizer
+    # The application exposes OpenMetrics so exemplars survive the scrape;
+    # Prometheus negotiates that format automatically.
+    static_configs:
+      # `make start` runs the app as the "server" container on this network.
+      - targets: ["server:8080"]
+        labels:
+          run_mode: container
+      # `make run` runs it on the host instead. Whichever is not in use shows
+      # as a down target, which is expected rather than a fault.
+      - targets: ["host.docker.internal:8080"]
+        labels:
+          run_mode: host
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]

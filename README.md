@@ -23,15 +23,18 @@ The motivation behind creating this template repository was to establish a unifi
 - ✅ Migrations ([goose](https://github.com/pressly/goose)), embedded in the binary
 - ✅ Dynamic configuration, overridable by environment variables
 - ✅ Structured [logging](https://github.com/softika/slogging) with request and correlation ids
+- ✅ Structured access log, on the same stream and format as application logs
 - ✅ Centralized error handling — domain error types mapped to status codes, detail kept server-side
 - ✅ Liveness and readiness probes, separated
-- ✅ Prometheus metrics with bounded label cardinality
+- ✅ Prometheus metrics with bounded label cardinality, including connection pool saturation
+- ✅ OpenTelemetry tracing over OTLP/HTTP, covering HTTP requests and every database query
+- ✅ Exemplars linking a latency histogram to the trace that produced it
 - ✅ Per-client rate limiting with an explicit client-IP trust model
 - ✅ Configurable CORS
 - ✅ Integration and e2e testing with [Testcontainers](https://golang.testcontainers.org/)
 - ✅ CI pipeline (GitHub Actions): build, test, `golangci-lint` v2, `govulncheck`, Dependabot
 - ✅ Dockerized development environment, non-root runtime image
-- 🏗️ OpenTelemetry tracing
+- ✅ Local observability stack (Prometheus, Tempo, Grafana) behind a compose profile
 
 Authentication and authorization are deliberately **not** included — see
 [what is not included](#what-is-not-included).
@@ -41,6 +44,73 @@ Authentication and authorization are deliberately **not** included — see
 The OpenAPI document is generated from the registered operations, so it cannot
 drift from the routes the server actually serves. There is no spec file to
 hand-maintain. See [api/README.md](api/README.md).
+
+## Observability
+
+Three signals, and they are joined rather than merely present.
+
+| Signal | Where | Notes |
+| --- | --- | --- |
+| Logs | stdout, JSON | Every record carries `X-Request-Id` and `X-Correlation-Id`; sampled requests also carry `trace_id` and `span_id` |
+| Metrics | `GET /metrics` | Request rate and latency by route pattern, connection pool statistics, `app_build_info` |
+| Traces | OTLP/HTTP | A server span per request and a client span per database query |
+
+**Correlation ids and trace ids both exist, on purpose.** Trace ids only appear
+on sampled requests, and tracing can be switched off entirely; correlation ids
+are present on every request either way, and a system that cannot speak W3C
+`traceparent` can still echo a header. Losing request correlation because a
+request happened not to be sampled would be the worst kind of gap — an
+intermittent one.
+
+The three connect through **exemplars**: the latency histogram carries the
+`trace_id` of sampled requests, so a spike on a Grafana panel is one click from
+the trace that caused it, and that trace's ids lead back to the logs for the
+same request.
+
+Tracing is **off by default**, so nothing here requires a collector to be
+running. To start the full local stack:
+
+```bash
+make observability
+```
+
+| | |
+| --- | --- |
+| Grafana | http://localhost:3000 — **start here.** Prometheus and Tempo pre-provisioned and linked |
+| Prometheus | http://localhost:9090 — exemplar storage enabled |
+| Tempo | `localhost:3200` — API only, **no web UI** |
+
+Two dashboards are provisioned from disk at startup, under the **Gopherizer**
+folder in Grafana:
+
+| Dashboard | Shows |
+| --- | --- |
+| Service overview | Request rate, server error ratio, latency percentiles by route, and the running build. The latency panel carries exemplars — click a diamond to open that request's trace |
+| Database pool | Connections by state against the pool maximum, acquire waits, and connection churn by reason |
+
+They live in [`deploy/observability/grafana/dashboards/`](deploy/observability/grafana/dashboards)
+as plain JSON. Editing them in the Grafana UI works, but the files are the
+source of truth and overwrite UI changes on the next scan — copy anything worth
+keeping back into the JSON.
+
+Tempo serves no browsable page: `http://localhost:3200/` returns 404 because
+`/` is not a route it has. Traces are read in Grafana, which queries Tempo
+through the provisioned datasource. The port is exposed so Grafana can reach it
+and so the API can be queried directly:
+
+```sh
+curl -s localhost:3200/ready                  # readiness
+curl -s "localhost:3200/api/search?limit=5"   # recent traces
+curl -s localhost:3200/api/traces/<trace_id>  # one trace, by id
+```
+
+Prometheus scrapes both `server:8080` and `host.docker.internal:8080`, so it
+finds the application whether it runs in the compose stack or on the host via
+`make run`. Whichever is not in use shows as a down target; that is expected.
+
+Query arguments are never attached to a database span. Statements are
+parameterised, so the recorded text carries no values, while the arguments hold
+real ones — and spans leave the process for a third-party backend.
 
 ## Building and running your application
 
@@ -70,7 +140,8 @@ Run `make help` to see all available commands.
 - [config/](config) - configuration and environment variable loading. More about config [here](config/README.md).
 - [database/](database) - database service, transactions, repositories and migration files. More about database [here](database/README.md).
 - [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities. More about internal [here](internal/README.md).
-- [pkg/](pkg) - reusable packages: `errorx` domain errors, `testinfra` test containers.
+- [pkg/](pkg) - reusable packages: `errorx` domain errors, `logx` logger construction, `otelx` tracing setup, `testinfra` test containers.
+- [deploy/](deploy) - configuration for the local observability stack.
 - [tests/](tests) - e2e tests.
 
 ## Deploying your application to the cloud
@@ -99,8 +170,10 @@ Any value can be overridden by an environment variable: uppercase the key and
 replace `.` with `_`.
 
 - `APP_ENVIRONMENT` overrides `app.environment`
+- `APP_LOG_LEVEL` overrides `app.log_level`
 - `HTTP_PORT` overrides `http.port`
 - `HTTP_CLIENT_IP_FROM` overrides `http.client_ip.from`
+- `TRACING_ENABLED` overrides `tracing.enabled`
 - `DATABASE_PASSWORD` overrides `database.password`
 
 Additionally, you can use [direnv](https://direnv.net/) to define environment
@@ -133,11 +206,21 @@ import (
 
 // New opens a connection pool and verifies it is reachable. The caller owns the
 // returned Service and must Close it, which is what allows a clean shutdown.
-func New(cfg config.DatabaseConfig) (Service, error) {
+// Options adjust the pool before it opens; WithQueryTracer attaches tracing.
+func New(cfg config.DatabaseConfig, opts ...Option) (Service, error) {
     ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
+    poolCfg, err := pgxpool.ParseConfig(dsnFromConfig(cfg))
+    if err != nil {
+        return nil, fmt.Errorf("failed to parse db connection config: %w", err)
+    }
+
+    for _, opt := range opts {
+        opt(poolCfg)
+    }
+
+    pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
     if err != nil {
         return nil, fmt.Errorf("failed to create db connection pool: %w", err)
     }
@@ -156,10 +239,15 @@ clear startup error instead of a stack trace.
 
 #### AppConfig
 
-`AppConfig` provides essential application settings: name, environment and
-version. These feed observability — they identify the service version and the
-environment it runs in, and the name and version also title the generated
-OpenAPI document.
+`AppConfig` provides essential application settings: name, environment, version
+and log level. These feed observability — they label `app_build_info` and the
+trace resource, and the name and version also title the generated OpenAPI
+document.
+
+`log_level` is the single switch for verbosity. Leave it empty to derive the
+level from `environment`. Note that the `ENVIRONMENT` variable read by the
+logging library is *not* consulted: configuration decides, so there is one
+switch rather than two that can disagree.
 
 ## Database migrations
 
@@ -219,9 +307,11 @@ go test ./... -run <test-name>
 ## What is not included
 
 The template ships with **no authentication or authorization**. Adding them is
-the first thing to do before exposing a service publicly. Distributed tracing
-is also absent — the exporter, backend, sampling strategy and propagation
-format are deployment decisions, so no choice is baked in here.
+the first thing to do before exposing a service publicly.
+
+Tracing is included but **disabled by default**, and it exports over OTLP to
+whatever backend a deployment points it at. The sampling ratio and endpoint are
+deployment decisions; no vendor choice is baked in.
 
 See [SECURITY.md](SECURITY.md) for the full list of what this template is and
 is not responsible for, and how to report a vulnerability.

@@ -2,6 +2,10 @@
 environment = "local"
 name = "gopherizer"
 version = "1.0.0"
+# Log level: debug, info, warn or error. Leave empty to derive it from
+# environment -- local and development log at debug, everything else at info.
+# An unrecognised value fails at startup.
+log_level = ""
 
 [http]
 host = "0.0.0.0"
@@ -41,3 +45,10 @@ user = "postgres"
 password = "password"
 dbname = "gopher"
 sslmode_disabled = true
+# OpenTelemetry trace export. Disabled by default so the template runs without
+# a collector; `docker compose --profile observability up` starts one.
+[tracing]
+enabled = false
+endpoint = "localhost:4318"
+insecure = true
+sample_ratio = 1.0

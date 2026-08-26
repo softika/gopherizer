@@ -5,10 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/softika/slogging"
-
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/pkg/logx"
 )
 
 var DownCmd = &cobra.Command{
@@ -21,13 +20,13 @@ var DownCmd = &cobra.Command{
 }
 
 func down() {
-	slog.SetDefault(slogging.Slogger())
-
 	cfg, err := config.New()
 	if err != nil {
 		slog.Error("failed to read config", "error", err)
 		return
 	}
+
+	slog.SetDefault(logx.New(cfg.App))
 
 	dvSvc, err := database.New(cfg.Database)
 	if err != nil {

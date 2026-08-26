@@ -3,12 +3,16 @@ package api
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/propagation"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 )
 
 // routerWithMetrics mounts a parameterised route behind the metrics middleware.
@@ -109,4 +113,64 @@ func TestMetricsCollapsesUnmatchedRoutes(t *testing.T) {
 		assert.NotContains(t, body, p, "unmatched path leaked into a metric label")
 	}
 	assert.Contains(t, body, routeUnmatched)
+}
+
+// scrapeOpenMetrics negotiates the OpenMetrics exposition format, which is the
+// only one that can carry exemplars.
+func scrapeOpenMetrics(t *testing.T, h http.Handler) string {
+	t.Helper()
+
+	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req.Header.Set("Accept", "application/openmetrics-text; version=1.0.0; charset=utf-8")
+
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, req)
+
+	require.Equal(t, http.StatusOK, w.Code)
+	return w.Body.String()
+}
+
+// TestMetricsAttachesTraceExemplar covers the link between the two systems: a
+// latency spike in Grafana becomes one click to the trace that caused it.
+func TestMetricsAttachesTraceExemplar(t *testing.T) {
+	t.Parallel()
+
+	exporter := tracetest.NewInMemoryExporter()
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSyncer(exporter),
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+	)
+	t.Cleanup(func() { _ = tp.Shutdown(t.Context()) })
+
+	m := newMetrics()
+	r := chi.NewRouter()
+	r.Use(tracing(tp, propagation.TraceContext{}))
+	r.Use(m.middleware)
+	r.Get("/ok", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/ok", nil))
+
+	spans := exporter.GetSpans()
+	require.Len(t, spans, 1)
+	traceId := spans[0].SpanContext.TraceID().String()
+
+	body := scrapeOpenMetrics(t, m.handler())
+
+	assert.Contains(t, body, "trace_id="+strconv.Quote(traceId),
+		"the sampled trace id must be attached as an exemplar")
+}
+
+// TestMetricsOmitsExemplarWithoutTrace proves an unsampled or untraced request
+// records latency normally rather than emitting a link that resolves to nothing.
+func TestMetricsOmitsExemplarWithoutTrace(t *testing.T) {
+	t.Parallel()
+
+	r, m := routerWithMetrics(t)
+
+	r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/api/v1/profile/abc", nil))
+
+	body := scrapeOpenMetrics(t, m.handler())
+
+	assert.Contains(t, body, "http_request_duration_seconds")
+	assert.NotContains(t, body, "trace_id=")
 }

@@ -81,8 +81,10 @@ func (s Service) GetById(ctx context.Context, req GetRequest) (*Response, error)
 }
 ```
 
-`slog.ErrorContext` is used rather than `slog.Error` so the request and
-correlation ids on the context reach the log record. The API layer maps the
+`slog.ErrorContext` is used rather than `slog.Error` so the values on the
+context reach the log record: the request and correlation ids always, and the
+trace and span ids whenever the request was sampled. Passing the context is the
+whole mechanism — `slog.Error` would drop all of them. The API layer maps the
 `errorx` type to a status code and replaces the message with a safe one — see
 [api/README.md](../api/README.md#error-handling-errorsgo).
 

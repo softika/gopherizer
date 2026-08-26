@@ -1,0 +1,39 @@
+# Minimal single-binary Tempo for local development.
+#
+# Storage is deliberately ephemeral and lives under /tmp: the image runs as a
+# non-root user, so a persistent volume at /var/tempo would need its ownership
+# fixed before Tempo could write. Traces are a debugging aid here, not a record
+# worth keeping across a restart.
+
+stream_over_http_enabled: true
+
+server:
+  http_listen_port: 3200
+
+distributor:
+  receivers:
+    otlp:
+      protocols:
+        # The application exports over OTLP/HTTP. gRPC is enabled too so a
+        # collector or another service can point here without reconfiguration.
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+
+ingester:
+  # Short blocks so a trace becomes searchable seconds after the request,
+  # rather than at the default flush interval.
+  max_block_duration: 5m
+
+compactor:
+  compaction:
+    block_retention: 1h
+
+storage:
+  trace:
+    backend: local
+    wal:
+      path: /tmp/tempo/wal
+    local:
+      path: /tmp/tempo/blocks

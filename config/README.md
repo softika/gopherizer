@@ -32,6 +32,7 @@ replace `.` with `_`:
 | --- | --- |
 | `app.name` | `APP_NAME` |
 | `app.environment` | `APP_ENVIRONMENT` |
+| `app.log_level` | `APP_LOG_LEVEL` |
 | `http.port` | `HTTP_PORT` |
 | `http.read_header_timeout` | `HTTP_READ_HEADER_TIMEOUT` |
 | `http.rate_limit.requests` | `HTTP_RATE_LIMIT_REQUESTS` |
@@ -40,6 +41,9 @@ replace `.` with `_`:
 | `http.cors.origins` | `HTTP_CORS_ORIGINS` |
 | `database.host` | `DATABASE_HOST` |
 | `database.password` | `DATABASE_PASSWORD` |
+| `tracing.enabled` | `TRACING_ENABLED` |
+| `tracing.endpoint` | `TRACING_ENDPOINT` |
+| `tracing.sample_ratio` | `TRACING_SAMPLE_RATIO` |
 
 The rule is uniform — there are no bare aliases. `APP_ENVIRONMENT` overrides
 `app.environment`; a plain `ENVIRONMENT` is ignored.
@@ -57,13 +61,32 @@ HTTP server takes `HTTPConfig`, neither sees the whole object.
 
 ### `[app]` — `AppConfig`
 
-| Key | Notes |
-| --- | --- |
-| `name` | Required. Also titles the generated OpenAPI document |
-| `environment` | Required. `local`, `staging`, `production`, … |
-| `version` | Required. Also the OpenAPI document version |
+| Key | Default | Notes |
+| --- | --- | --- |
+| `name` | `gopherizer` | Required. Titles the OpenAPI document and labels telemetry |
+| `environment` | `local` | Required. `local`, `staging`, `production`, … |
+| `version` | `1.0.0` | Required. Also the OpenAPI document version |
+| `log_level` | `""` | `debug`, `info`, `warn`, `error`. Empty derives from `environment` |
 
-These feed observability: they identify which build is running, and where.
+These feed observability: they label `app_build_info` and the trace resource,
+so a dashboard can tell which build is running and where.
+
+### Log level
+
+`log_level` is the only switch for verbosity. When empty it is derived:
+`local` and `development` log at debug, everything else at info.
+
+An unrecognised value **fails at startup** rather than falling back to a level
+nobody chose.
+
+Two things worth knowing:
+
+- The `ENVIRONMENT` variable that the [slogging](https://github.com/softika/slogging)
+  library reads on its own is **not** consulted here. Configuration decides the
+  level, so there is one switch rather than two that can silently disagree.
+- Production derives **info**, not error. slogging's own mapping uses error,
+  which discards startup, shutdown and the detail behind every readiness
+  failure — making production the environment you can see least about.
 
 ### `[http]` — `HTTPConfig`
 
@@ -129,6 +152,28 @@ Credentials are enabled automatically **unless** `origins` contains `*`.
 | `password` | placeholder | Required. Supply the real value from the environment or a secret manager |
 | `dbname` | `gopher` | Required |
 | `sslmode_disabled` | `true` | Convenient locally. Enable TLS for any database that is not on localhost |
+
+### `[tracing]` — `TracingConfig`
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `enabled` | `false` | Off by default, so the template runs with no collector |
+| `endpoint` | `localhost:4318` | OTLP/HTTP receiver as `host:port`, no scheme |
+| `insecure` | `true` | Plain HTTP. Fine for a collector on localhost, wrong across a network |
+| `sample_ratio` | `1.0` | Head sampling for traces started here, `0`–`1` |
+
+Export is OTLP over **HTTP**, not gRPC: the gRPC exporter pulls in
+`google.golang.org/grpc`, which is a large dependency for a template to impose.
+Traces go straight to a backend that accepts OTLP — no collector is required in
+between, though one can be pointed at instead.
+
+`sample_ratio` only governs traces that *start* here. A request arriving with a
+`traceparent` header follows the caller's sampling decision, so a trace stays
+whole across services instead of developing holes wherever a hop re-rolled.
+
+Turning `enabled` off removes the tracing middleware entirely. Correlation ids
+are unaffected, which is why they are kept alongside trace ids rather than
+replaced by them.
 
 ---
 

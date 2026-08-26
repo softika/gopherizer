@@ -35,6 +35,23 @@ stop:
 		docker-compose down; \
 	fi
 
+## observability: Start the full stack with Prometheus, Tempo and Grafana.
+.PHONY: observability
+observability:
+	@echo "=== Starting observability stack..."
+	@TRACING_ENABLED=true docker compose --profile observability up -d
+	@echo
+	@echo "    Grafana:     http://localhost:3000  <- view traces and dashboards here"
+	@echo "    Prometheus:  http://localhost:9090"
+	@echo "    Tempo:       localhost:3200          (API only, no web UI)"
+	@echo
+
+## observability-stop: Stop the observability stack.
+.PHONY: observability-stop
+observability-stop:
+	@echo "=== Stopping observability stack..."
+	@docker compose --profile observability down
+
 ## build: Build the project.
 .PHONY: build
 build:

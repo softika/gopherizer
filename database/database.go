@@ -57,13 +57,25 @@ const connectTimeout = 10 * time.Second
 // Each call returns an independent Service; the caller owns its lifetime and
 // must Close it. Failures are returned rather than panicked, so the server can
 // report a clear startup error.
-func New(cfg config.DatabaseConfig) (Service, error) {
+//
+// Options adjust the pool before it opens; WithQueryTracer is how tracing is
+// attached without any repository knowing about it.
+func New(cfg config.DatabaseConfig, opts ...Option) (Service, error) {
 	slog.Info("creating a new database connection pool...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 	defer cancel()
 
-	pool, err := pgxpool.New(ctx, dsnFromConfig(cfg))
+	poolCfg, err := pgxpool.ParseConfig(dsnFromConfig(cfg))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse db connection config: %w", err)
+	}
+
+	for _, opt := range opts {
+		opt(poolCfg)
+	}
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create db connection pool: %w", err)
 	}
