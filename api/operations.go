@@ -41,9 +41,9 @@ type profileIdInput struct {
 //
 // Each registration is the single source of truth for routing, request
 // decoding, validation and the OpenAPI operation.
-func registerOperations(api huma.API, s services) {
+func registerOperations(api huma.API, s services, maxBodyBytes int64) {
 	registerHealth(api, s.health)
-	registerProfile(api, s.profile)
+	registerProfile(api, s.profile, maxBodyBytes)
 }
 
 func registerHealth(api huma.API, svc health.Service) {
@@ -90,7 +90,13 @@ func registerHealth(api huma.API, svc health.Service) {
 	}, readiness)
 }
 
-func registerProfile(api huma.API, svc profile.Service) {
+// registerProfile wires the profile endpoints.
+//
+// maxBodyBytes is applied to the operations that read a body. huma otherwise
+// assigns its own 1 MiB default to those, which would silently overrule a
+// larger configured limit and make the setting appear not to work. Operations
+// without a body are unaffected, since nothing is read.
+func registerProfile(api huma.API, svc profile.Service, maxBodyBytes int64) {
 	huma.Register(api, huma.Operation{
 		OperationID:   "create-profile",
 		Method:        http.MethodPost,
@@ -98,6 +104,7 @@ func registerProfile(api huma.API, svc profile.Service) {
 		Summary:       "Create profile",
 		Tags:          []string{"Profile"},
 		DefaultStatus: http.StatusCreated,
+		MaxBodyBytes:  maxBodyBytes,
 	}, func(ctx context.Context, in *createProfileInput) (*profileOutput, error) {
 		res, err := svc.Create(ctx, in.Body)
 		if err != nil {
@@ -107,11 +114,12 @@ func registerProfile(api huma.API, svc profile.Service) {
 	})
 
 	huma.Register(api, huma.Operation{
-		OperationID: "update-profile",
-		Method:      http.MethodPut,
-		Path:        "/api/v1/profile",
-		Summary:     "Update profile",
-		Tags:        []string{"Profile"},
+		OperationID:  "update-profile",
+		Method:       http.MethodPut,
+		Path:         "/api/v1/profile",
+		Summary:      "Update profile",
+		Tags:         []string{"Profile"},
+		MaxBodyBytes: maxBodyBytes,
 	}, func(ctx context.Context, in *updateProfileInput) (*profileOutput, error) {
 		res, err := svc.Update(ctx, in.Body)
 		if err != nil {

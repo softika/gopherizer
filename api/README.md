@@ -57,14 +57,17 @@ The order matters:
 3. `accessLogger` — registered straight after correlation, so the one line
    recording status and latency is joinable to everything else
 4. `middleware.CleanPath`
-5. `middleware.Recoverer`
-6. `middleware.Heartbeat("/")`
-7. `middleware.NoCache`
-8. `middleware.AllowContentEncoding("deflate", "gzip")`
-9. CORS, when origins are configured
-10. metrics, when enabled — inside tracing, so a sampled span is available to
+5. `recoverer` — structured, unlike chi's, which writes plain text to stderr
+6. `requestTimeout`, when configured — inside the recoverer, so a panic raised
+   while unwinding a timed-out request is still caught
+7. `middleware.Heartbeat("/")`
+8. `middleware.NoCache`
+9. `middleware.AllowContentEncoding("deflate", "gzip")`
+10. `bodyLimit`, when configured
+11. CORS, when origins are configured
+12. metrics, when enabled — inside tracing, so a sampled span is available to
     attach as an exemplar
-11. client-IP resolver, then the rate limiter — the resolver must run first or
+13. client-IP resolver, then the rate limiter — the resolver must run first or
     the bucket key is wrong
 
 #### OpenAPI configuration
@@ -222,6 +225,51 @@ The level follows the status: `5xx` logs at error, `4xx` at warn, everything
 else at info, so a failing endpoint is findable without knowing to filter on a
 status field. Requests to the metrics path are skipped; a 15s scrape interval
 would otherwise bury the logs this middleware exists to produce.
+
+### `recoverer.go`
+
+Turns a panic into a logged failure and a 500.
+
+It replaces chi's `middleware.Recoverer`, which writes the stack straight to
+`os.Stderr` as plain text. That left the most important record in the system in
+a format no aggregator could parse and with no request id, so a panic could not
+be tied back to the request that caused it — the same defect the access log had,
+on the line where it matters most.
+
+Nothing about the panic reaches the caller: a stack names internal paths, types
+and sometimes values. The response uses `application/problem+json` with huma's
+own error model, so a client parses one error format rather than two.
+
+`http.ErrAbortHandler` is re-panicked rather than reported. It is the standard
+library's way of saying "drop this connection deliberately", not a fault.
+
+### `timeout.go`
+
+Gives every request a deadline. Without one a handler is bounded only by the
+server's write timeout, which is measured in minutes — long enough for a pool's
+worth of slow requests to hold every connection.
+
+It cancels the context rather than writing a response itself, so the handler
+sees the cancellation, the query it is waiting on is abandoned, and the error
+travels the normal path. `classify` maps a deadline onto `ErrUnavailable`, so a
+request that ran out of time answers **503** rather than a misleading 500.
+
+This is the middle of three layers — see
+[config/README.md](../config/README.md#layered-timeouts).
+
+### `bodylimit.go`
+
+Caps the request body.
+
+huma already applies a 1 MiB default to operations that read a body, so this is
+not the difference between bounded and unbounded for those routes. What it adds
+is that the limit is explicit and configurable in one place, and that it covers
+routes huma never sees — the heartbeat, the metrics endpoint, anything mounted
+on the chi router directly.
+
+The same configured value is passed to the operations that read a body.
+Otherwise huma's default would silently overrule a larger configured limit, and
+the setting would appear not to work.
 
 ### `clientip.go`
 

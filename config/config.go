@@ -65,7 +65,14 @@ type HTTPConfig struct {
 	ReadHeaderTimeout time.Duration `mapstructure:"read_header_timeout"`
 	WriteTimeout      time.Duration `mapstructure:"write_timeout"`
 	IdleTimeout       time.Duration `mapstructure:"idle_timeout"`
-	Cors              struct {
+	// RequestTimeout bounds how long a single request may take. It sits inside
+	// WriteTimeout and outside the database statement timeout, so the most
+	// specific limit fires first and the error names the real cause.
+	RequestTimeout time.Duration `mapstructure:"request_timeout"`
+	// MaxBodyBytes caps a request body. Zero disables the limit, which leaves
+	// the process open to a trivial memory exhaustion.
+	MaxBodyBytes int64 `mapstructure:"max_body_bytes" validate:"gte=0"`
+	Cors         struct {
 		Origins string `mapstructure:"origins"`
 		Methods string `mapstructure:"methods"`
 		Headers string `mapstructure:"headers"`
@@ -102,6 +109,28 @@ type DatabaseConfig struct {
 	Password        string `mapstructure:"password" validate:"required"`
 	User            string `mapstructure:"user" validate:"required"`
 	SSLModeDisabled bool   `mapstructure:"sslmode_disabled"`
+
+	// MaxConns bounds the pool. Left unset, pgx derives it from the machine's
+	// CPU count, so the same image silently gets a different ceiling on every
+	// host size -- and the database's own connection limit is a shared budget
+	// that no single service should size by accident.
+	MaxConns int32 `mapstructure:"max_conns" validate:"gte=0"`
+	// MinConns keeps connections warm so a burst does not pay to reconnect.
+	MinConns int32 `mapstructure:"min_conns" validate:"gte=0"`
+	// MaxConnLifetime retires connections regardless of health, which is what
+	// lets a failover or a rotated credential take effect without a restart.
+	MaxConnLifetime time.Duration `mapstructure:"max_conn_lifetime"`
+	// MaxConnIdleTime releases connections the pool is no longer using.
+	MaxConnIdleTime time.Duration `mapstructure:"max_conn_idle_time"`
+	// HealthCheckPeriod is how often idle connections are verified.
+	HealthCheckPeriod time.Duration `mapstructure:"health_check_period"`
+	// StatementTimeout is applied by Postgres itself, so a runaway query is
+	// cancelled server-side rather than holding a pooled connection until the
+	// HTTP write deadline. Zero disables it.
+	//
+	// It applies to migrations too, since they share this configuration. Raise
+	// it for a deployment that runs long ones.
+	StatementTimeout time.Duration `mapstructure:"statement_timeout"`
 }
 
 // TracingConfig configures OpenTelemetry trace export.

@@ -98,6 +98,31 @@ Two things worth knowing:
 | `read_header_timeout` | `10s` | Falls back to 10s in code if unset |
 | `write_timeout` | `2m` | |
 | `idle_timeout` | `2m` | |
+| `request_timeout` | `30s` | Per-request deadline. `0` disables it |
+| `max_body_bytes` | `1048576` | Request body cap, 1 MiB. `0` disables it |
+
+#### Layered timeouts
+
+Three deadlines bound a request, and the order matters: the innermost fires
+first, so the error names the real cause instead of the outermost backstop
+tripping on everything.
+
+```
+database.statement_timeout  15s   postgres cancels a runaway query
+http.request_timeout        30s   the request's own deadline
+http.write_timeout           2m   the backstop
+```
+
+A request that exceeds `request_timeout` is answered **503**, not 500 — it was
+too slow, not broken, and those need different responses from a caller.
+
+#### On `max_body_bytes`
+
+huma already applies a 1 MiB default to any operation that reads a body, so
+this is not the difference between bounded and unbounded. What it adds is an
+explicit, configurable limit that also covers routes huma never sees. The same
+value is passed to the operations that read a body, so raising it actually
+works — otherwise huma's own default would silently overrule it.
 
 ### `[http.rate_limit]`
 
@@ -152,6 +177,25 @@ Credentials are enabled automatically **unless** `origins` contains `*`.
 | `password` | placeholder | Required. Supply the real value from the environment or a secret manager |
 | `dbname` | `gopher` | Required |
 | `sslmode_disabled` | `true` | Convenient locally. Enable TLS for any database that is not on localhost |
+| `max_conns` | `10` | Pool ceiling |
+| `min_conns` | `2` | Connections kept warm |
+| `max_conn_lifetime` | `1h` | Retire connections regardless of health |
+| `max_conn_idle_time` | `30m` | Release unused connections |
+| `health_check_period` | `1m` | How often idle connections are verified |
+| `statement_timeout` | `15s` | Applied by Postgres. `0` disables it |
+
+State `max_conns` rather than leaving it: pgx otherwise derives the ceiling from
+the host CPU count, so the same image gets a different limit on every machine
+size — while the database's connection limit is a shared budget no single
+service should size by accident.
+
+`max_conn_lifetime` is what lets a failover or a rotated credential take effect
+without restarting the process.
+
+`statement_timeout` is enforced by Postgres, so a runaway query is cancelled
+server-side rather than holding a pooled connection until the write deadline.
+**It applies to migrations too**, since they share this configuration — raise it
+for a deployment that runs long ones.
 
 ### `[tracing]` — `TracingConfig`
 

@@ -14,6 +14,13 @@ read_timeout = "2m"
 read_header_timeout = "10s"
 write_timeout = "2m"
 idle_timeout = "2m"
+# Per-request deadline. Layered inside write_timeout and outside the database
+# statement_timeout, so the innermost limit fires first and the error names the
+# real cause. A request that exceeds it is answered 503.
+request_timeout = "30s"
+# Maximum request body, in bytes. 1 MiB. Zero disables the limit and leaves the
+# process open to trivial memory exhaustion.
+max_body_bytes = 1048576
 
 [http.rate_limit]
 requests = 100
@@ -45,6 +52,18 @@ user = "postgres"
 password = "password"
 dbname = "gopher"
 sslmode_disabled = true
+# Pool sizing. Left unset, pgx derives max_conns from the host CPU count, so the
+# same image gets a different ceiling on every machine size. Postgres has a
+# global connection limit that every service draws from, so state the share.
+max_conns = 10
+min_conns = 2
+max_conn_lifetime = "1h"
+max_conn_idle_time = "30m"
+health_check_period = "1m"
+# Applied by Postgres, so a runaway query is cancelled server-side instead of
+# holding a pooled connection until the HTTP write deadline. Migrations share
+# this setting -- raise it if yours run longer.
+statement_timeout = "15s"
 # OpenTelemetry trace export. Disabled by default so the template runs without
 # a collector; `docker compose --profile observability up` starts one.
 [tracing]

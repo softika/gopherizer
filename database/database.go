@@ -71,6 +71,8 @@ func New(cfg config.DatabaseConfig, opts ...Option) (Service, error) {
 		return nil, fmt.Errorf("failed to parse db connection config: %w", err)
 	}
 
+	applyPoolSettings(poolCfg, cfg)
+
 	for _, opt := range opts {
 		opt(poolCfg)
 	}

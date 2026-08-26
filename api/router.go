@@ -44,7 +44,7 @@ func NewRouter(cfg *config.Config, db database.Service) *Router {
 
 	api.api = humachi.New(r, openApiConfig(cfg))
 
-	registerOperations(api.api, api.initServices(api.initRepositories(db)))
+	registerOperations(api.api, api.initServices(api.initRepositories(db)), cfg.Http.MaxBodyBytes)
 
 	return api
 }
@@ -102,10 +102,26 @@ func defaultMiddlewares(r *chi.Mux, cfg *config.Config, db database.Service) *me
 	r.Use(correlation)
 	r.Use(accessLogger(cfg.Http, slog.Default()))
 	r.Use(middleware.CleanPath)
-	r.Use(middleware.Recoverer)
+
+	// Structured, rather than chi's Recoverer, which writes the stack to
+	// stderr as plain text with no correlation id.
+	r.Use(recoverer(slog.Default()))
+
+	// Inside the recoverer, so a panic raised while unwinding a timed-out
+	// request is still caught and reported.
+	if timeout := requestTimeout(cfg.Http); timeout != nil {
+		r.Use(timeout)
+	}
+
 	r.Use(middleware.Heartbeat("/"))
 	r.Use(middleware.NoCache)
 	r.Use(middleware.AllowContentEncoding("deflate", "gzip"))
+
+	// Outside huma, so the cap covers every route the router serves rather
+	// than only the registered operations.
+	if limit := bodyLimit(cfg.Http); limit != nil {
+		r.Use(limit)
+	}
 
 	if c := corsMiddleware(cfg.Http); c != nil {
 		r.Use(c)

@@ -29,6 +29,10 @@ The motivation behind creating this template repository was to establish a unifi
 - ✅ Prometheus metrics with bounded label cardinality, including connection pool saturation
 - ✅ OpenTelemetry tracing over OTLP/HTTP, covering HTTP requests and every database query
 - ✅ Exemplars linking a latency histogram to the trace that produced it
+- ✅ Layered timeouts — Postgres statement, per-request deadline, server write
+- ✅ Explicit connection pool sizing, not inherited from the host CPU count
+- ✅ Request body cap, applied uniformly across every route
+- ✅ Panics reported as structured logs with correlation and trace ids
 - ✅ Per-client rate limiting with an explicit client-IP trust model
 - ✅ Configurable CORS
 - ✅ Integration and e2e testing with [Testcontainers](https://golang.testcontainers.org/)

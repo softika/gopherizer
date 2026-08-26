@@ -111,6 +111,24 @@ var (
 Repositories satisfy the generic `internal.Repository[T, ID]` interface, so the
 service layer depends on the shape, not the implementation.
 
+### Pool tuning (`pool.go`)
+
+Sizing and timeouts come from configuration rather than from pgx's defaults.
+
+Left unset, pgx derives `MaxConns` from the host CPU count — so the same image
+quietly gets a different ceiling on every machine size, while the database's
+connection limit is a shared budget that no single service should size by
+accident. Stating the number matters more than the number itself.
+
+`statement_timeout` is applied by Postgres, not by the client, which is what
+makes it effective: cancelling a context abandons the *client's* wait, while the
+server keeps executing and the connection stays busy. It applies to migrations
+too, since they share this configuration.
+
+Every value is optional and zero means "not configured" rather than zero — pgx
+rejects a pool of zero connections, and an unset duration should keep pgx's own
+default rather than disable the behaviour outright.
+
 ### Query tracing (`tracing.go`)
 
 `WithQueryTracer` installs a `pgx.QueryTracer` on the pool, so every query gets
@@ -143,11 +161,15 @@ genuine failure, so it is the layer that tags errors:
 | Driver condition | Domain type |
 | --- | --- |
 | `pgx.ErrNoRows` | `errorx.ErrNotFound` |
+| `context.DeadlineExceeded`, `context.Canceled` | `errorx.ErrUnavailable` |
 | Anything else | `errorx.ErrInternal` |
 | `DELETE`/`UPDATE` matching zero rows | `errorx.ErrNotFound` |
 
-That last one matters: a `DELETE` that matches nothing is not a success, even
-though the driver reports no error.
+Two of these matter more than they look. A `DELETE` that matches nothing is not
+a success, even though the driver reports no error. And a request that ran out
+of time is not a server fault — reporting 500 would tell a caller the service is
+broken when it was merely too slow, and would put a genuine fault and an
+ordinary timeout in the same bucket on every dashboard.
 
 ---
 
