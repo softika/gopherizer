@@ -52,6 +52,46 @@ observability-stop:
 	@echo "=== Stopping observability stack..."
 	@docker compose --profile observability down
 
+## auth: Start the stack with Keycloak as the identity provider.
+.PHONY: auth
+auth:
+	@echo "=== Starting stack with authentication..."
+	@OIDC_ENABLED=true docker compose --profile auth up -d
+	@echo
+	@echo "    Keycloak:  http://localhost:8081  (admin / admin)"
+	@echo "    Realm:     gopherizer"
+	@echo
+	@echo "    Get a token with every scope and the admin role:"
+	@echo "      curl -s -d grant_type=password -d client_id=gopherizer-cli \\"
+	@echo "        -d username=gopher -d password=gopher \\"
+	@echo "        http://localhost:8081/realms/gopherizer/protocol/openid-connect/token | jq -r .access_token"
+	@echo
+	@echo "    The 'reader' user (reader / reader) holds no role, so it is"
+	@echo "    refused by delete-profile and served by the rest."
+	@echo
+
+## auth-host: Start Keycloak for an application running on the host via 'make run'.
+.PHONY: auth-host
+auth-host:
+	@echo "=== Starting Keycloak for a host-run application..."
+	@KC_HOSTNAME=http://localhost:8081 docker compose --profile auth up -d keycloak database
+	@echo
+	@echo "    Keycloak issues tokens for http://localhost:8081, so export the"
+	@echo "    matching issuer before 'make run':"
+	@echo
+	@echo "      export OIDC_ENABLED=true"
+	@echo "      export OIDC_ISSUER=http://localhost:8081/realms/gopherizer"
+	@echo "      export OIDC_AUDIENCE=gopherizer-api"
+	@echo "      export OIDC_ROLES_CLAIM=realm_access.roles"
+	@echo "      export OIDC_REQUIRE_TYPED_ACCESS_TOKEN=true"
+	@echo
+
+## auth-stop: Stop the identity provider.
+.PHONY: auth-stop
+auth-stop:
+	@echo "=== Stopping the identity provider..."
+	@docker compose --profile auth down
+
 ## build: Build the project.
 .PHONY: build
 build:

@@ -12,6 +12,7 @@ import (
 	"github.com/softika/gopherizer/api"
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/pkg/oidcx"
 	"github.com/softika/gopherizer/pkg/testinfra"
 )
 
@@ -21,6 +22,12 @@ type E2ETestSuite struct {
 	dbContainer *testinfra.PostgresContainer
 	dbService   database.Service
 	router      *api.Router
+
+	// A second router over the same dependencies, with authentication on, so
+	// the guarded and unguarded behaviours are both exercised against the real
+	// stack without paying for a second database container.
+	oidc          *testinfra.OIDCProvider
+	securedRouter *api.Router
 }
 
 func (s *E2ETestSuite) SetupSuite() {
@@ -50,11 +57,41 @@ func (s *E2ETestSuite) SetupSuite() {
 	httpCfg.Cors.Headers = "Content-Type"
 
 	cfg := &config.Config{
-		App:      config.AppConfig{Environment: "test"},
+		App:      config.AppConfig{Name: "gopherizer", Environment: "test", Version: "1.0.0"},
 		Http:     httpCfg,
 		Database: s.dbContainer.Config,
 	}
 	s.router = api.NewRouter(cfg, s.dbService)
+
+	s.setupSecuredRouter(httpCfg)
+}
+
+// setupSecuredRouter builds the authenticated variant against an in-process
+// identity provider. No container and no network: the suite runs under a 30
+// second timeout and has to pass without a Docker daemon reachable.
+func (s *E2ETestSuite) setupSecuredRouter(httpCfg config.HTTPConfig) {
+	var err error
+
+	s.oidc, err = testinfra.RunOIDC()
+	if err != nil {
+		s.T().Fatal("failed to start the oidc provider", err)
+	}
+
+	verifier, err := oidcx.Init(s.T().Context(), s.oidc.Config)
+	if err != nil {
+		s.T().Fatal("failed to initialise oidc verification", err)
+	}
+
+	// The same app identity as the unsecured router, so the two generated
+	// documents differ only in what authentication changes.
+	cfg := &config.Config{
+		App:      config.AppConfig{Name: "gopherizer", Environment: "test", Version: "1.0.0"},
+		Http:     httpCfg,
+		Database: s.dbContainer.Config,
+		Oidc:     s.oidc.Config,
+	}
+
+	s.securedRouter = api.NewRouter(cfg, s.dbService, api.WithVerifier(verifier))
 }
 
 func (s *E2ETestSuite) prepareDb() {
@@ -68,6 +105,12 @@ func (s *E2ETestSuite) prepareDb() {
 }
 
 func (s *E2ETestSuite) TearDownSuite() {
+	if s.oidc != nil {
+		if err := s.oidc.Shutdown(); err != nil {
+			slog.Warn("failed to shut down the oidc provider", "error", err)
+		}
+	}
+
 	if err := s.dbService.Close(); err != nil {
 		slog.Warn("failed to close db connection", "error", err)
 	}

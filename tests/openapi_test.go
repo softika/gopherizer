@@ -106,3 +106,32 @@ func (s *E2ETestSuite) TestResponsesCarryNoSchemaLink() {
 	s.Equal(http.StatusOK, w.Code)
 	s.Contains(w.Body.String(), "ProfileResponse")
 }
+
+// The shipped default authenticates nothing, and the document must say so. A
+// scheme advertised by a service that checks no token sends every client off to
+// obtain a credential nothing will ever read.
+func (s *E2ETestSuite) TestUnauthenticatedServiceDocumentsNoSecurity() {
+	req := httptest.NewRequest(http.MethodGet, "/openapi.json", nil)
+	w := httptest.NewRecorder()
+	s.router.ServeHTTP(w, req)
+
+	s.Require().Equal(http.StatusOK, w.Code)
+
+	var doc struct {
+		Paths map[string]map[string]struct {
+			Security []map[string][]string `json:"security"`
+		} `json:"paths"`
+		Comps struct {
+			SecuritySchemes map[string]any `json:"securitySchemes"`
+		} `json:"components"`
+	}
+	s.Require().NoError(json.Unmarshal(w.Body.Bytes(), &doc))
+
+	s.Empty(doc.Comps.SecuritySchemes, "no scheme may be declared while nothing is enforced")
+
+	for path, methods := range doc.Paths {
+		for method, op := range methods {
+			s.Emptyf(op.Security, "%s %s advertises a requirement the service does not enforce", method, path)
+		}
+	}
+}

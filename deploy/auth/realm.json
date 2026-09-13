@@ -1,0 +1,147 @@
+{
+  "realm": "gopherizer",
+  "enabled": true,
+  "displayName": "Gopherizer (local development only)",
+  "sslRequired": "none",
+  "accessTokenLifespan": 1800,
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Required by delete-profile, alongside the profile:write scope."
+      }
+    ]
+  },
+  "clientScopes": [
+    {
+      "name": "gopherizer-audience",
+      "description": "Everything a resource server needs from this realm: the audience, the subject, and the caller's realm roles.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "false",
+        "display.on.consent.screen": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "gopherizer-subject",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "gopherizer-api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.custom.audience": "gopherizer-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        },
+        {
+          "name": "gopherizer-realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "claim.name": "realm_access.roles",
+            "multivalued": "true",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "name": "profile:read",
+      "description": "Read a profile.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "profile:write",
+      "description": "Create, update or delete a profile.",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "gopherizer-cli",
+      "name": "Gopherizer development CLI",
+      "description": "Public client with the direct access grant enabled, so a token can be fetched with one curl. Never model a production client on this.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "protocol": "openid-connect",
+      "attributes": {
+        "access.token.header.type.rfc9068": "true"
+      },
+      "defaultClientScopes": [
+        "gopherizer-audience",
+        "profile:read",
+        "profile:write"
+      ],
+      "optionalClientScopes": []
+    }
+  ],
+  "users": [
+    {
+      "username": "gopher",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Go",
+      "lastName": "Pher",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "gopher",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "default-roles-gopherizer"
+      ],
+      "email": "gopher@example.com",
+      "requiredActions": []
+    },
+    {
+      "username": "reader",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Read",
+      "lastName": "Only",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "reader",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-gopherizer"
+      ],
+      "email": "reader@example.com",
+      "requiredActions": []
+    }
+  ],
+  "displayNameHtml": "<b>Gopherizer</b> local realm. Declaring clientScopes here replaces Keycloak's built-in scopes rather than adding to them, so sub, roles and the audience are all mapped explicitly."
+}

@@ -18,6 +18,7 @@ type Config struct {
 	Http     HTTPConfig     `mapstructure:"http"`
 	Database DatabaseConfig `mapstructure:"database" validate:"required"`
 	Tracing  TracingConfig  `mapstructure:"tracing"`
+	Oidc     OIDCConfig     `mapstructure:"oidc"`
 }
 
 func New() (*Config, error) {
@@ -147,4 +148,53 @@ type TracingConfig struct {
 	// SampleRatio is the head sampling ratio for traces started here. Traces
 	// started upstream follow the caller's decision.
 	SampleRatio float64 `mapstructure:"sample_ratio" validate:"gte=0,lte=1"`
+}
+
+// OIDCConfig configures resource-server authentication: the service validates
+// bearer tokens issued elsewhere and issues none of its own. There is no login
+// flow, no callback route and no session.
+//
+// Disabled by default: the template must run, and its tests must pass, without
+// an identity provider listening anywhere.
+//
+// There is deliberately no key for skipping the audience, issuer, expiry or
+// signature check. go-oidc exposes all four, and each is one environment
+// variable away from turning authentication off in a deployment -- which this
+// repository has already been bitten by once, as the comment on
+// TestDefaultConfigHasNoOrphanKeys records. The signing algorithms are pinned
+// in code for the same reason: a configurable list can only ever be widened.
+type OIDCConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+
+	// Issuer is the provider URL, exactly as it appears in a token's `iss`.
+	// Discovery reads <issuer>/.well-known/openid-configuration, and that
+	// document's own `issuer` must match this string byte for byte.
+	Issuer string `mapstructure:"issuer"`
+
+	// Audience is the identifier this API is known by, checked against `aud`.
+	//
+	// It must be the API's own resource identifier and never an OAuth client
+	// id. An ID token's `aud` is the client id, so reusing one here would let a
+	// browser-held ID token pass as an access token.
+	Audience string `mapstructure:"audience"`
+
+	// ScopeClaim carries granted scopes, as either a space-delimited string or
+	// an array. Entra ID uses "scp"; nearly everything else uses "scope".
+	ScopeClaim string `mapstructure:"scope_claim"`
+
+	// RolesClaim carries roles. A dotted path addresses a nested claim, which
+	// is how Keycloak realm roles are reached. The whole string is tried as a
+	// top-level key first, so a namespaced claim that itself contains dots
+	// still resolves.
+	RolesClaim string `mapstructure:"roles_claim"`
+
+	// DiscoveryTimeout bounds discovery at startup. An unreachable provider is
+	// fatal rather than degraded -- see oidcx.Init for why.
+	DiscoveryTimeout time.Duration `mapstructure:"discovery_timeout"`
+
+	// RequireTypedAccessToken rejects any token whose JOSE header `typ` is not
+	// `at+jwt` (RFC 9068). It is the airtight defence against an ID token
+	// replayed as an access token, but not every provider emits it -- Keycloak
+	// sends `typ: Bearer` unless the client opts in -- so it is off by default.
+	RequireTypedAccessToken bool `mapstructure:"require_typed_access_token"`
 }

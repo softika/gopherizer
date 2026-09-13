@@ -33,6 +33,7 @@ The motivation behind creating this template repository was to establish a unifi
 - ✅ Explicit connection pool sizing, not inherited from the host CPU count
 - ✅ Request body cap, applied uniformly across every route
 - ✅ Panics reported as structured logs with correlation and trace ids
+- ✅ OIDC bearer token verification, with per-operation scope and role checks
 - ✅ Per-client rate limiting with an explicit client-IP trust model
 - ✅ Configurable CORS
 - ✅ Integration and e2e testing with [Testcontainers](https://golang.testcontainers.org/)
@@ -40,8 +41,9 @@ The motivation behind creating this template repository was to establish a unifi
 - ✅ Dockerized development environment, non-root runtime image
 - ✅ Local observability stack (Prometheus, Tempo, Grafana) behind a compose profile
 
-Authentication and authorization are deliberately **not** included — see
-[what is not included](#what-is-not-included).
+Authentication is **off by default** and turns on with configuration — see
+[Authentication](#authentication). Token *issuance* is deliberately not
+included; see [what is not included](#what-is-not-included).
 
 ## OpenAPI
 
@@ -116,6 +118,91 @@ Query arguments are never attached to a database span. Statements are
 parameterised, so the recorded text carries no values, while the arguments hold
 real ones — and spans leave the process for a third-party backend.
 
+## Authentication
+
+The service is an OAuth2 **resource server**: it validates bearer tokens issued
+by an identity provider and issues none of its own. There is no login flow, no
+callback route and no session — see [what is not included](#what-is-not-included).
+
+It is **off by default**, so the template runs and its tests pass with no
+identity provider anywhere. Turning it on takes configuration and nothing else:
+
+```bash
+OIDC_ENABLED=true \
+OIDC_ISSUER=https://id.example.com/realms/myapp \
+OIDC_AUDIENCE=myapp-api \
+make run
+```
+
+At startup the service reads the provider's discovery document, caches its key
+set, and from then on verifies every token's signature, issuer, audience and
+expiry locally — no call to the provider per request.
+
+### Try it against a real provider
+
+```bash
+make auth   # starts the stack with Keycloak, realm pre-configured
+```
+
+Then fetch a token and use it:
+
+```bash
+TOKEN=$(curl -s -d grant_type=password -d client_id=gopherizer-cli \
+  -d username=gopher -d password=gopher \
+  http://localhost:8081/realms/gopherizer/protocol/openid-connect/token | jq -r .access_token)
+
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/profile/{id}
+```
+
+The realm ships two users: `gopher` holds the `admin` role, `reader` does not.
+Both can read and write; only `gopher` can delete, which is what demonstrates
+the role check. `make auth-host` runs Keycloak for an application started on the
+host with `make run` instead — see the note on issuer addresses below.
+
+### Declaring what an operation requires
+
+A requirement is declared once, at registration, and is both enforced and
+documented from that single value:
+
+```go
+huma.Register(api, secured(huma.Operation{
+    OperationID: "create-profile",
+    Method:      http.MethodPost,
+    Path:        "/api/v1/profile",
+}, authx.Scope("profile:write"), g), handler)
+```
+
+`authx` composes requirements with `Scope`, `Role`, `AllOf` and `AnyOf`. A
+handler reads the caller with `authx.FromContext(ctx)`, which is how a check
+the middleware cannot make — "does this subject own this record?" — is written
+in the service layer.
+
+Scopes reach the generated OpenAPI document; **roles cannot**, because an
+OpenAPI security requirement has no way to express them. The projection runs one
+way, from the requirement that is enforced, so the document can only ever
+understate what is enforced, never overstate it.
+
+### What stays open
+
+The health probes, `/metrics`, `/docs` and `/openapi.json` are never guarded.
+An orchestrator carries no token, and a probe that answered 401 would take every
+instance out of rotation for an identity provider outage the fleet would
+otherwise have served straight through.
+
+### Things that bite
+
+| | |
+| --- | --- |
+| `oidc.audience` must be the **API's** identifier, never an OAuth client id | An ID token's `aud` *is* the client id, so reusing one lets a browser-held ID token pass as an access token. Tokens carrying `at_hash`, `c_hash` or `nonce` are refused for the same reason. |
+| The issuer must match `iss` **byte for byte** | Including the trailing slash. A provider reached on two addresses stamps whichever one it was configured with — which is why the Keycloak profile pins `KC_HOSTNAME` and why `make auth-host` exists. |
+| Roles are usually nested | Keycloak puts them at `realm_access.roles`, Entra and Auth0 at `roles`. `OIDC_ROLES_CLAIM` takes a dotted path; the shipped default is the vendor-neutral `roles`. |
+| Startup fails if the provider is unreachable | Deliberate. A process that starts unable to verify anything is not degraded — it reports itself healthy, accepts traffic, and rejects every request. A running process is unaffected: keys are cached. |
+
+There is no setting for skipping the audience, issuer, expiry or signature
+check, and the accepted signing algorithms are pinned in code. Both omissions
+are deliberate: each would be one environment variable away from turning
+authentication off in a deployment.
+
 ## Building and running your application
 
 Start the whole stack — database, migrations, server:
@@ -144,7 +231,7 @@ Run `make help` to see all available commands.
 - [config/](config) - configuration and environment variable loading. More about config [here](config/README.md).
 - [database/](database) - database service, transactions, repositories and migration files. More about database [here](database/README.md).
 - [internal/](internal) - core logic, `services` as business use cases and `model` as domain entities. More about internal [here](internal/README.md).
-- [pkg/](pkg) - reusable packages: `errorx` domain errors, `logx` logger construction, `otelx` tracing setup, `testinfra` test containers.
+- [pkg/](pkg) - reusable packages: `errorx` domain errors, `logx` logger construction, `otelx` tracing setup, `authx` identity and authorization rules, `oidcx` token verification, `testinfra` test containers.
 - [deploy/](deploy) - configuration for the local observability stack.
 - [tests/](tests) - e2e tests.
 
@@ -178,6 +265,9 @@ replace `.` with `_`.
 - `HTTP_PORT` overrides `http.port`
 - `HTTP_CLIENT_IP_FROM` overrides `http.client_ip.from`
 - `TRACING_ENABLED` overrides `tracing.enabled`
+- `OIDC_ENABLED` overrides `oidc.enabled`
+- `OIDC_ISSUER` overrides `oidc.issuer`
+- `OIDC_AUDIENCE` overrides `oidc.audience`
 - `DATABASE_PASSWORD` overrides `database.password`
 
 Additionally, you can use [direnv](https://direnv.net/) to define environment
@@ -310,8 +400,14 @@ go test ./... -run <test-name>
 
 ## What is not included
 
-The template ships with **no authentication or authorization**. Adding them is
-the first thing to do before exposing a service publicly.
+The template validates tokens; it does not **issue** them. There is no login
+flow, no authorization-code or PKCE handling, no token endpoint, no refresh, no
+user store and no consent screen — those belong to an identity provider, and
+[Authentication](#authentication) covers pointing this service at one.
+
+Authorization is a vocabulary, not a policy: `authx` gives you scopes, roles and
+the combinators to express a rule, and the scopes the example endpoints require
+are illustrative. Replace them with whatever your provider actually issues.
 
 Tracing is included but **disabled by default**, and it exports over OTLP to
 whatever backend a deployment points it at. The sampling ratio and endpoint are

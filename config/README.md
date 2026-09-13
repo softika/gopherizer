@@ -44,6 +44,10 @@ replace `.` with `_`:
 | `tracing.enabled` | `TRACING_ENABLED` |
 | `tracing.endpoint` | `TRACING_ENDPOINT` |
 | `tracing.sample_ratio` | `TRACING_SAMPLE_RATIO` |
+| `oidc.enabled` | `OIDC_ENABLED` |
+| `oidc.issuer` | `OIDC_ISSUER` |
+| `oidc.audience` | `OIDC_AUDIENCE` |
+| `oidc.roles_claim` | `OIDC_ROLES_CLAIM` |
 
 The rule is uniform — there are no bare aliases. `APP_ENVIRONMENT` overrides
 `app.environment`; a plain `ENVIRONMENT` is ignored.
@@ -218,6 +222,61 @@ whole across services instead of developing holes wherever a hop re-rolled.
 Turning `enabled` off removes the tracing middleware entirely. Correlation ids
 are unaffected, which is why they are kept alongside trace ids rather than
 replaced by them.
+
+---
+
+### `[oidc]` — `OIDCConfig`
+
+| Key | Default | Notes |
+| --- | --- | --- |
+| `enabled` | `false` | Off by default, so the template runs with no identity provider |
+| `issuer` | `""` | Provider URL, exactly as it appears in a token's `iss`. Required when enabled |
+| `audience` | `""` | This API's identifier, checked against `aud`. Required when enabled |
+| `scope_claim` | `scope` | Space-delimited string or array. Entra ID uses `scp` |
+| `roles_claim` | `roles` | Dotted paths address nested claims — Keycloak needs `realm_access.roles` |
+| `discovery_timeout` | `10s` | Bound on provider discovery at startup |
+| `require_typed_access_token` | `false` | Enforce RFC 9068 `typ: at+jwt` |
+
+The service is a resource server: it validates tokens and issues none. Both
+`issuer` and `audience` are validated when `enabled` is true, in `oidcx.Init`
+rather than by a struct tag — the check is conditional on another field, which
+the tag vocabulary used elsewhere in this package does not express, and the
+error names the setting rather than go-oidc's internal spelling of it.
+
+#### On `audience`
+
+It must be the identifier of **this API**, not an OAuth client id. This is the
+single most common way to configure the feature into uselessness, because
+go-oidc's field for it is named `ClientID` and every example fills it with one.
+
+An ID token's `aud` *is* the client id. Setting `audience` to a client id
+therefore makes every ID token the provider issues a valid access token here —
+including one sitting in a browser. Tokens carrying `at_hash`, `c_hash` or
+`nonce` are refused as a second line of defence, and
+`require_typed_access_token` is a third for providers that stamp RFC 9068
+headers.
+
+Keycloak needs an audience mapper to put anything useful in `aud` at all; left
+alone it emits `aud: ["account"]`, which matches nothing. The shipped realm at
+`deploy/auth/realm.json` has one.
+
+#### On the settings that are not here
+
+go-oidc exposes flags to skip the audience, issuer, expiry and signature
+checks, and accepts a configurable list of signing algorithms. None of them is
+reachable from this file, and that is deliberate.
+
+Each skip flag would be one environment variable away from turning off
+authentication in a deployment — and this package already carries a guard test
+whose comment records an `[http.auth]` secret that once sat in the file unbound.
+Settings that exist get set. The algorithm list is pinned in code to asymmetric
+algorithms for the same reason: nobody widens one to strengthen a deployment,
+so `alg: none` and HMAC key confusion are made unrepresentable instead of
+merely defaulted against.
+
+Turning `enabled` off removes the requirement from every operation *and* the
+scheme from the generated OpenAPI document, so an unauthenticated deployment
+does not advertise a check nothing performs.
 
 ---
 

@@ -28,9 +28,30 @@ project, unless the cause is a default inherited from here.
 
 ## What the template does and does not give you
 
-The template ships with no authentication or authorization. Adding them is the
-responsibility of whoever builds on it, and is the first thing to do before
-exposing a service publicly.
+The template verifies OIDC bearer tokens and enforces per-operation scope and
+role requirements, but ships with that **disabled**. Enabling it is
+configuration (`oidc.enabled`, `oidc.issuer`, `oidc.audience`) and is the first
+thing to do before exposing a service publicly. It does not issue tokens: there
+is no login flow, no token endpoint and no user store.
+
+Health probes, `/metrics`, `/docs` and `/openapi.json` are deliberately never
+guarded. An orchestrator carries no token, so a probe behind the guard would
+take every instance out of rotation during an identity provider outage the
+fleet would otherwise survive.
+
+Two properties are enforced in code rather than left to configuration, because
+each would otherwise be one environment variable away from disabling
+authentication in a deployment:
+
+- The audience, issuer, expiry and signature checks cannot be skipped. go-oidc
+  exposes a flag for each; none is reachable from `config`.
+- The accepted signing algorithms are asymmetric only, so `alg: none` and HMAC
+  key confusion are unrepresentable rather than merely defaulted against.
+
+Tokens carrying `at_hash`, `c_hash` or `nonce` are refused: those are OpenID
+Connect ID token claims, and an ID token presented in place of an access token
+must not be honoured even when the audience has been misconfigured to an OAuth
+client id.
 
 Defaults that are deliberately permissive for local development, and that must
 be reviewed before deploying:
@@ -41,6 +62,8 @@ be reviewed before deploying:
 | `http.client_ip.from` | `remote_addr` | Behind a proxy or CDN this buckets every caller together for rate limiting — set `xff` or `header` |
 | `http.metrics.enabled` | `true` at `/metrics` | Unauthenticated; restrict it at the ingress or disable it |
 | `database.sslmode_disabled` | `true` | Enable TLS for any database that is not on localhost |
+| `oidc.enabled` | `false` | Every endpoint is unauthenticated until this is turned on |
+| `oidc.require_typed_access_token` | `false` | RFC 9068 `typ` checking is off because not every provider stamps the header; turn it on once yours is confirmed to |
 | `database.password` | a placeholder | Supply real credentials via environment or a secret manager, never in the config file |
 
 ## Automated checks

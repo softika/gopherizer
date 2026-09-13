@@ -11,6 +11,7 @@ import (
 
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
+	"github.com/softika/gopherizer/pkg/oidcx"
 )
 
 // Router is the main API router.
@@ -27,7 +28,22 @@ type Router struct {
 // NewRouter builds the API router around an already-connected database.
 // The pool is injected rather than created here so its lifetime is owned by the
 // caller, which is what allows a clean shutdown.
-func NewRouter(cfg *config.Config, db database.Service) *Router {
+func NewRouter(cfg *config.Config, db database.Service, opts ...Option) *Router {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+
+	// A configuration that asks for authentication, wired without anything to
+	// authenticate with, is a programming error that would otherwise produce a
+	// running service serving every protected route to anyone. NewRouter
+	// returns no error, so a panic is the only exit that fails closed -- and it
+	// is the same answer chi gives for Use after a route, and huma for a
+	// duplicate operation id.
+	if cfg.Oidc.Enabled && o.verifier == nil {
+		panic("api: oidc is enabled but no verifier was supplied; pass api.WithVerifier")
+	}
+
 	r := chi.NewRouter()
 
 	// Every middleware first; routes only afterwards.
@@ -44,9 +60,43 @@ func NewRouter(cfg *config.Config, db database.Service) *Router {
 
 	api.api = humachi.New(r, openApiConfig(cfg))
 
-	registerOperations(api.api, api.initServices(api.initRepositories(db)), cfg.Http.MaxBodyBytes)
+	// Built only when enabled, so cfg.Oidc.Enabled is the single switch: the
+	// scheme appears in the document exactly when the guard is enforcing.
+	var g *guard
+	if cfg.Oidc.Enabled {
+		g = newGuard(api.api, o.verifier, slog.Default())
+	}
+
+	// Stated at startup because the difference is invisible from outside until
+	// somebody calls a protected route and finds it open.
+	slog.Info("api authentication", "enabled", g != nil)
+
+	registerOperations(api.api, api.initServices(api.initRepositories(db)), cfg.Http.MaxBodyBytes, g)
 
 	return api
+}
+
+// Option adjusts the router before its routes are registered.
+//
+// Options exist so NewRouter keeps returning a router rather than a router and
+// an error: the fallible part of authentication is provider discovery, which
+// belongs at startup next to the other dependencies, not here.
+type Option func(*options)
+
+type options struct {
+	verifier oidcx.Verifier
+}
+
+// WithVerifier supplies the token verifier the guard uses.
+//
+// It only provides the collaborator. Whether authentication is enforced is
+// decided by cfg.Oidc.Enabled alone, so a verifier passed to a router with OIDC
+// disabled changes nothing, and a router with OIDC enabled and no verifier
+// refuses to be built.
+func WithVerifier(v oidcx.Verifier) Option {
+	return func(o *options) {
+		o.verifier = v
+	}
 }
 
 // openApiConfig describes the generated document and where it is served.
@@ -65,6 +115,15 @@ func openApiConfig(cfg *config.Config) huma.Config {
 	// Package-qualified schema names, so same-named types across packages do
 	// not collide in huma's single global registry.
 	c.Components.Schemas = newSchemaRegistry()
+
+	// Declared only when authentication is enforced. A document that named a
+	// scheme nothing checks would describe a service that does not exist, and
+	// the first thing a client does with it is send a token nobody reads.
+	if cfg.Oidc.Enabled {
+		c.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+			securitySchemeName: securityScheme(cfg.Oidc),
+		}
+	}
 
 	// DefaultConfig's only create hook installs a schema-link transformer that
 	// stamps a "$schema" field into every response body and a matching Link

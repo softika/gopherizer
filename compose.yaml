@@ -16,6 +16,12 @@ services:
       context: .
       target: final
     command: ["serve"]
+    # Startup fails when OIDC is on and the provider is not answering yet, and
+    # Keycloak takes far longer to come up than discovery is willing to wait.
+    # A restart policy is the right lever rather than a depends_on: keycloak is
+    # gated behind the auth profile, so depending on it would either drag it
+    # into the default stack or break profile validation.
+    restart: unless-stopped
     environment:
       DATABASE_HOST: database
       HTTP_PORT: 8080
@@ -24,6 +30,20 @@ services:
       TRACING_ENABLED: ${TRACING_ENABLED:-false}
       TRACING_ENDPOINT: ${TRACING_ENDPOINT:-tempo:4318}
       TRACING_INSECURE: "true"
+      # Authentication stays off unless asked for, so the default stack needs
+      # no identity provider. `make auth` sets this to true.
+      OIDC_ENABLED: ${OIDC_ENABLED:-false}
+      # Must equal the `iss` the provider stamps into its tokens. The default
+      # names the compose service, which is the address this container resolves
+      # -- see KC_HOSTNAME on the keycloak service for the other half.
+      OIDC_ISSUER: ${OIDC_ISSUER:-http://keycloak:8080/realms/gopherizer}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-gopherizer-api}
+      # Keycloak nests realm roles; the shipped default is deliberately vendor
+      # neutral, so the provider-specific path is set here rather than there.
+      OIDC_ROLES_CLAIM: ${OIDC_ROLES_CLAIM:-realm_access.roles}
+      # The shipped realm issues RFC 9068 access tokens, so the strict check is
+      # on in this example even though it ships off.
+      OIDC_REQUIRE_TYPED_ACCESS_TOKEN: ${OIDC_REQUIRE_TYPED_ACCESS_TOKEN:-true}
     ports:
       - "8080:8080"
     networks:
@@ -145,13 +165,49 @@ services:
       - gopher
 
 
+
+  # Identity provider, for local development only.
+  #
+  # Behind a profile so the default stack stays a database and an application:
+  # `make auth` starts it, plain `make start` does not.
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak:26.5
+    profiles: [auth]
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+      # Keycloak stamps `iss` from this value, so it alone decides which side of
+      # the network can verify a token -- the usual reason a working setup
+      # rejects every token with "issuer did not match".
+      #
+      # The default names the compose service, which is what the server
+      # container resolves. Keycloak still listens on localhost:8081, so a token
+      # fetched from the host carries this same issuer and both sides agree with
+      # no /etc/hosts edit. Run `make auth-host` for the reverse arrangement,
+      # where the application runs on the host via `make run`.
+      KC_HOSTNAME: ${KC_HOSTNAME:-http://keycloak:8080}
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "false"
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./deploy/auth/realm.json:/opt/keycloak/data/import/realm.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 && cat <&3 | grep -q '\"status\": \"UP\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - gopher
+
 volumes:
   db_data:
 
 # secrets:
 #   db-password:
 #     file: db/password.txt
-
 networks:
   gopher:
     driver: bridge

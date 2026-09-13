@@ -80,3 +80,40 @@ func TestNewDefaultsLogLevelToEmpty(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, cfg.App.LogLevel)
 }
+
+// The shipped defaults must leave authentication off, or the template stops
+// running out of the box and every existing test needs an identity provider.
+//
+// It does not run in parallel: New reads the process-wide viper instance.
+func TestOidcIsDisabledByDefault(t *testing.T) {
+	cfg, err := New()
+
+	require.NoError(t, err)
+	assert.False(t, cfg.Oidc.Enabled, "authentication must be opt-in")
+	assert.Equal(t, "scope", cfg.Oidc.ScopeClaim)
+	assert.Equal(t, "roles", cfg.Oidc.RolesClaim,
+		"the default must stay vendor neutral; the Keycloak path belongs with the Keycloak profile")
+	assert.Positive(t, cfg.Oidc.DiscoveryTimeout, "discovery must be bounded")
+	assert.False(t, cfg.Oidc.RequireTypedAccessToken,
+		"rfc 9068 is opt-in because not every provider stamps the header")
+}
+
+// Every key has to be reachable by environment variable, because viper only
+// binds the ones already present in the embedded file -- which is exactly how
+// the unbound [http.auth] secret this package's guard test records came about.
+func TestOidcSettingsBindFromTheEnvironment(t *testing.T) {
+	t.Setenv("OIDC_ENABLED", "true")
+	t.Setenv("OIDC_ISSUER", "https://issuer.example/realms/test")
+	t.Setenv("OIDC_AUDIENCE", "gopherizer-api")
+	t.Setenv("OIDC_ROLES_CLAIM", "realm_access.roles")
+	t.Setenv("OIDC_REQUIRE_TYPED_ACCESS_TOKEN", "true")
+
+	cfg, err := New()
+
+	require.NoError(t, err)
+	assert.True(t, cfg.Oidc.Enabled)
+	assert.Equal(t, "https://issuer.example/realms/test", cfg.Oidc.Issuer)
+	assert.Equal(t, "gopherizer-api", cfg.Oidc.Audience)
+	assert.Equal(t, "realm_access.roles", cfg.Oidc.RolesClaim)
+	assert.True(t, cfg.Oidc.RequireTypedAccessToken)
+}

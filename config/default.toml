@@ -71,3 +71,37 @@ enabled = false
 endpoint = "localhost:4318"
 insecure = true
 sample_ratio = 1.0
+
+# OIDC resource-server authentication: incoming bearer tokens are validated
+# against an external provider. There is no login flow and no session -- this
+# service consumes tokens, it does not issue them.
+#
+# Disabled by default so the template runs without an identity provider.
+# `make auth` starts a Keycloak already configured to match.
+[oidc]
+enabled = false
+# The provider URL, exactly as it appears in a token's `iss`. Discovery reads
+# <issuer>/.well-known/openid-configuration, and that document's own `issuer`
+# must match this string byte for byte.
+issuer = ""
+# The identifier this API is known by, checked against the token's `aud`.
+# This must be the API's own resource identifier, NOT an OAuth client id: an
+# ID token's `aud` is the client id, so reusing one here would let a browser
+# held ID token pass as an access token.
+audience = ""
+# Claim carrying granted scopes, as a space-delimited string or an array.
+# Entra ID uses "scp"; nearly everything else uses "scope".
+scope_claim = "scope"
+# Claim carrying roles. A dotted path addresses a nested claim, which is how
+# Keycloak realm roles are reached ("realm_access.roles"). The whole string is
+# tried as a top-level key first, so a namespaced claim containing dots still
+# resolves.
+roles_claim = "roles"
+# Bound on provider discovery at startup. An unreachable provider fails the
+# boot; a running process keeps serving from its cached key set.
+discovery_timeout = "10s"
+# Require RFC 9068 access tokens (`typ: at+jwt`). The airtight defence against
+# an ID token replayed as an access token, but not every provider emits it --
+# Keycloak needs the client attribute access.token.header.type.rfc9068. Turn
+# this on once you have confirmed yours does. The shipped Keycloak realm does.
+require_typed_access_token = false

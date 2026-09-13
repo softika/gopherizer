@@ -70,6 +70,11 @@ The order matters:
 13. client-IP resolver, then the rate limiter — the resolver must run first or
     the bucket key is wrong
 
+Authentication is deliberately **absent from this list**. It is attached per
+operation rather than to the router, so it applies to registered operations only
+and leaves the heartbeat, the metrics endpoint, `/docs` and `/openapi.json`
+reachable without a token. See [`auth.go`](#authgo).
+
 #### OpenAPI configuration
 
 - Document served at `/openapi.json` and `/openapi.yaml`, UI at `/docs`.
@@ -133,6 +138,22 @@ huma.Register(api, huma.Operation{
 })
 ```
 
+5. Declare what the operation requires, by wrapping it in `secured`:
+
+```go
+huma.Register(api, secured(huma.Operation{
+    OperationID: "create-profile",
+    // ...
+}, authx.Scope("profile:write"), g), handler)
+```
+
+   The requirement is enforced and documented from that one argument — see
+   [`auth.go`](#authentication-and-authorization-authgo). An operation under
+   `/api` that omits this fails `TestEveryProfileOperationDeclaresSecurity`,
+   and one that declares a requirement it does not enforce fails
+   `TestEverySecuredOperationRejectsAnonymousCallers`, which walks the
+   generated document rather than a list maintained by hand.
+
 The route, the validation and the documentation all follow from that one call.
 
 ### Error handling (`errors.go`)
@@ -157,6 +178,83 @@ Two statuses are produced outside this table:
 - **422** — huma's own request validation, before a handler is reached. This is
   huma's default for schema violations, not 400.
 - **429** — the rate limiter.
+
+The guard produces 401 and 403 too, for a request that never reaches a handler.
+It goes through the same `statusError` mapping and the same client wording, so a
+caller parses one error vocabulary regardless of where the refusal came from.
+
+### Authentication and authorization (`auth.go`)
+
+The service is an OAuth2 resource server. `pkg/oidcx` verifies a bearer token
+and resolves it to an `authx.Identity`; `pkg/authx` expresses what an operation
+requires; this file is the part that joins them to huma.
+
+It is off unless `oidc.enabled` is true. That single setting decides both
+whether the guard is built and whether the scheme appears in the document, so
+the two can never disagree. Supplying the verifier is separate — `NewRouter`
+takes it as an option, and **panics** if authentication is enabled without one,
+because an option silently omitted would otherwise produce a running service
+serving every protected route to anyone.
+
+#### Why per operation, not API-wide
+
+huma evaluates `api.Middlewares()` inside `huma.Register` and bakes the result
+into that operation's handler:
+
+```go
+a.Handle(&op, api.Middlewares().Handler(op.Middlewares.Handler(handler)))
+```
+
+An API-wide guard registered *after* the operations would therefore be appended
+to a slice nothing reads. Every operation would enforce nothing while its
+`Security` field still advertised the scheme — a silent, total fail-open
+produced by reordering two lines, with no compiler error to catch it.
+
+`secured` closes that off by construction:
+
+```go
+func secured(op huma.Operation, req authx.Requirements, g *guard) huma.Operation
+```
+
+It sets `op.Security` and `op.Middlewares` from one argument, in one statement.
+There is no way to declare a requirement without also enforcing it.
+
+#### The document understates, never overstates
+
+`Security` is *derived* from the requirement rather than written alongside it.
+OpenAPI security requirements express scopes and cannot express roles, so a
+role requirement documents only as "a token is required" while staying enforced
+in code. Because the projection runs one way — from the value that enforces —
+the document can only ever say less than the truth.
+
+#### Behaviour
+
+| Situation | Answer |
+| --- | --- |
+| No token, or a malformed `Authorization` header | 401, with `WWW-Authenticate: Bearer error="invalid_token"` |
+| Token rejected by the verifier | 401 |
+| Provider unreachable, or its key endpoint failing | 503 — an outage there is not a fleet of callers with bad credentials |
+| Verifier returned an untyped error | 500, failing closed rather than reading a bug as a rejection |
+| Token valid, requirement unmet | 403, with no challenge: another credential is not the advice |
+
+Rejection happens before the handler runs, so an unauthenticated request never
+reaches the body parser. The response body carries the same generic wording as
+every other error of its type — naming the failed check would tell an attacker
+which part they already have right — while the reason goes to the log, where
+`correlation` has already attached the request id. The credential itself is
+never logged.
+
+#### Reading the caller
+
+`authx.FromContext(ctx)` returns the identity inside a handler or service. The
+context key is an unexported struct type in `authx`, which is the first local
+context-key convention in this repository; the guard writes it through
+`huma.WithContext` rather than `huma.WithValue` so the key stays private to the
+package that defines it.
+
+That is where a check the middleware cannot make belongs — "does this subject
+own this record?" needs the record, so it lives in the service layer and
+returns `errorx.ErrForbidden` through the normal error path.
 
 ### Schema naming (`schema.go`)
 

@@ -18,6 +18,7 @@ import (
 	"github.com/softika/gopherizer/config"
 	"github.com/softika/gopherizer/database"
 	"github.com/softika/gopherizer/pkg/logx"
+	"github.com/softika/gopherizer/pkg/oidcx"
 	"github.com/softika/gopherizer/pkg/otelx"
 )
 
@@ -95,7 +96,17 @@ func Run() {
 		os.Exit(1)
 	}
 
-	router := api.NewRouter(cfg, db)
+	// Discovery reaches the identity provider, so this can fail -- and when it
+	// does the process exits rather than starting up unable to verify anything.
+	// See oidcx.Init for why that is the right failure here and the wrong one
+	// for tracing.
+	verifier, err := oidcx.Init(context.Background(), cfg.Oidc)
+	if err != nil {
+		slog.Error("failed to initialise oidc verification", "error", err)
+		os.Exit(1)
+	}
+
+	router := api.NewRouter(cfg, db, api.WithVerifier(verifier))
 
 	srv := api.NewServer(cfg.Http)
 
